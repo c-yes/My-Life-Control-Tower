@@ -22,12 +22,12 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-xl">
-            🗼
+          <div className="w-9 h-9 rounded-lg bg-pink-500 flex items-center justify-center text-xl">
+            🎯
           </div>
           <div>
             <div className="text-white font-bold text-sm leading-tight">My Life's</div>
-            <div className="text-indigo-400 font-medium text-xs">Control Tower</div>
+            <div className="text-pink-400 font-medium text-xs">Control Tower</div>
           </div>
         </div>
       </div>

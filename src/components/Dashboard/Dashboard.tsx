@@ -10,18 +10,6 @@ import {
   calculateStreak,
 } from '../../utils/helpers';
 
-const sections = [
-  { path: '/life-compass', title: 'Life Compass', color: '#6366f1', bg: '#eef2ff' },
-  { path: '/annual-goals', title: 'Annual', color: '#10b981', bg: '#ecfdf5' },
-  { path: '/monthly-plan', title: 'Monthly', color: '#f59e0b', bg: '#fffbeb' },
-  { path: '/weekly-plan', title: 'Weekly', color: '#3b82f6', bg: '#eff6ff' },
-  { path: '/daily-plan', title: 'Daily', color: '#8b5cf6', bg: '#f5f3ff' },
-  { path: '/time-block', title: 'Time Block', color: '#ec4899', bg: '#fdf2f8' },
-  { path: '/miracle21', title: 'Miracle 21', color: '#f97316', bg: '#fff7ed' },
-  { path: '/mind-map', title: 'Mind Map', color: '#14b8a6', bg: '#f0fdfa' },
-  { path: '/domain-tracker', title: 'Domain Tracker', color: '#6366f1', bg: '#eef2ff' },
-];
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const {
@@ -73,7 +61,7 @@ export default function Dashboard() {
             </h2>
             <p className="text-slate-500 mt-1">{formatDateDisplay(new Date())} — Manage your life intentionally.</p>
             {lifeCompass.mission && (
-              <blockquote className="mt-3 pl-3 border-l-4 border-indigo-400 text-sm text-slate-600 italic">
+              <blockquote className="mt-3 pl-3 border-l-4 border-pink-400 text-sm text-slate-600 italic">
                 {lifeCompass.mission}
               </blockquote>
             )}
@@ -87,8 +75,7 @@ export default function Dashboard() {
           label="Today's Tasks"
           value={`${completedToday}/${todayTasks.length}`}
           sub={`${taskCompletionPct}% done`}
-          color="#6366f1"
-          emoji="✅"
+          color="#ec4899"
           onClick={() => navigate('/daily-plan')}
         />
         <StatCard
@@ -96,7 +83,6 @@ export default function Dashboard() {
           value={`${completedWeekTasks}/${thisWeekTasks.length}`}
           sub="tasks completed"
           color="#3b82f6"
-          emoji="📋"
           onClick={() => navigate('/weekly-plan')}
         />
         <StatCard
@@ -104,7 +90,6 @@ export default function Dashboard() {
           value={`${completedMonthGoals}/${thisMonthGoals.length}`}
           sub="goals achieved"
           color="#10b981"
-          emoji="📅"
           onClick={() => navigate('/monthly-plan')}
         />
         <StatCard
@@ -112,7 +97,6 @@ export default function Dashboard() {
           value={`${bestHabitStreak}`}
           sub="days in a row"
           color="#f97316"
-          emoji="⭐"
           onClick={() => navigate('/miracle21')}
         />
       </div>
@@ -160,7 +144,6 @@ export default function Dashboard() {
               const cfg = DOMAIN_CONFIG[goal.domain];
               return (
                 <div key={goal.id} className="flex items-center gap-3">
-                  <span className="text-lg">{cfg.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-slate-700 truncate">{goal.title}</span>
@@ -179,26 +162,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Navigation Cards */}
-      <div>
-        <h3 className="font-bold text-slate-900 mb-4">Quick Access</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {sections.map((s) => (
-            <button
-              key={s.path}
-              className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer"
-              onClick={() => navigate(s.path)}
-            >
-              <div
-                className="w-10 h-10 rounded-lg mb-3"
-                style={{ background: s.bg }}
-              />
-              <div className="font-semibold text-slate-800 text-sm">{s.title}</div>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -208,14 +171,12 @@ function StatCard({
   value,
   sub,
   color,
-  emoji,
   onClick,
 }: {
   label: string;
   value: string;
   sub: string;
   color: string;
-  emoji: string;
   onClick: () => void;
 }) {
   return (
@@ -224,7 +185,6 @@ function StatCard({
       onClick={onClick}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xl">{emoji}</span>
         <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white" style={{ background: color }}>
           {value}
         </span>

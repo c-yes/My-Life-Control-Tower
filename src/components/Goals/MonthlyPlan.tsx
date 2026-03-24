@@ -21,6 +21,7 @@ export default function MonthlyPlan() {
   const completedCount = goals.filter((g) => g.completed).length;
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
   const yearAnnualGoals = annualGoals.filter((g) => g.year === year);
+  const achievementPct = goals.length > 0 ? Math.round((completedCount / goals.length) * 100) : 0;
 
   function handleAdd() {
     if (!form.title.trim()) return;
@@ -46,12 +47,8 @@ export default function MonthlyPlan() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="section-title">Monthly</h2>
-          <p className="section-subtitle">{MONTH_NAMES[month - 1]} {year} — {completedCount}/{goals.length} goals completed</p>
-        </div>
+      {/* Controls */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <select className="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -61,31 +58,26 @@ export default function MonthlyPlan() {
               <option key={i + 1} value={i + 1}>{name}</option>
             ))}
           </select>
-          <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-            <Plus size={14} /> Add Goal
-          </button>
         </div>
+        <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
+          <Plus size={14} /> Add Goal
+        </button>
       </div>
 
-      {/* Progress */}
+      {/* Achievement */}
       {goals.length > 0 && (
         <div className="card py-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-700">Monthly Progress</span>
-            <span className="text-sm font-bold text-indigo-600">
-              {goals.length > 0 ? Math.round((completedCount / goals.length) * 100) : 0}%
-            </span>
+            <span className="text-sm font-medium text-slate-700">Achievement</span>
+            <span className="text-sm font-bold text-pink-500">{achievementPct}%</span>
           </div>
-          <div className="progress-bar h-3 bg-slate-100">
+          <div className="progress-bar h-3">
             <div
               className="progress-fill h-3"
-              style={{
-                width: `${goals.length > 0 ? (completedCount / goals.length) * 100 : 0}%`,
-                background: '#6366f1',
-              }}
+              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
             />
           </div>
-          <div className="text-xs text-slate-400 mt-1">{completedCount} of {goals.length} goals achieved</div>
+          <div className="text-xs text-slate-400 mt-1">{completedCount} of {goals.length} goals completed</div>
         </div>
       )}
 
@@ -108,7 +100,7 @@ export default function MonthlyPlan() {
             >
               {domains.map((d) => (
                 <option key={d} value={d}>
-                  {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label} ({DOMAIN_CONFIG[d].labelKo})
+                  {DOMAIN_CONFIG[d].label}
                 </option>
               ))}
             </select>
@@ -120,7 +112,7 @@ export default function MonthlyPlan() {
               <option value="">No linked annual goal</option>
               {yearAnnualGoals.map((ag) => (
                 <option key={ag.id} value={ag.id}>
-                  {DOMAIN_CONFIG[ag.domain].emoji} {ag.title}
+                  {ag.title}
                 </option>
               ))}
             </select>
@@ -145,6 +137,14 @@ export default function MonthlyPlan() {
         </div>
       )}
 
+      {/* Section: Goals */}
+      {goals.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Goals</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+      )}
+
       {/* Goals by Domain */}
       {domains.map((domain) => {
         const domainGoals = groupedGoals[domain];
@@ -153,10 +153,7 @@ export default function MonthlyPlan() {
         return (
           <div key={domain} className="card">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">{cfg.emoji}</span>
-              <h3 className="font-semibold text-slate-800">
-                {cfg.label} <span className="text-slate-400 font-normal text-sm">/ {cfg.labelKo}</span>
-              </h3>
+              <h3 className="font-semibold text-slate-800">{cfg.label}</h3>
               <span
                 className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full text-white"
                 style={{ background: cfg.color }}
@@ -197,9 +194,7 @@ export default function MonthlyPlan() {
                       {linkedAnnual && (
                         <div className="flex items-center gap-1 mt-1">
                           <ExternalLink size={11} className="text-slate-400" />
-                          <span className="text-xs text-slate-400">
-                            {linkedAnnual.title}
-                          </span>
+                          <span className="text-xs text-slate-400">{linkedAnnual.title}</span>
                         </div>
                       )}
                     </div>
@@ -217,22 +212,28 @@ export default function MonthlyPlan() {
         );
       })}
 
-      {/* Link to Weekly */}
+      {/* Section: Plan */}
       {goals.length > 0 && (
-        <div className="card bg-indigo-50 border-indigo-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold text-indigo-800">Ready to plan your week?</h4>
-              <p className="text-sm text-indigo-600 mt-0.5">Break down monthly goals into weekly tasks.</p>
-            </div>
-            <button
-              className="btn-primary flex items-center gap-1"
-              onClick={() => navigate('/weekly-plan')}
-            >
-              Weekly Plan <ArrowRight size={14} />
-            </button>
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Plan</span>
+            <div className="flex-1 h-px bg-slate-200" />
           </div>
-        </div>
+          <div className="card bg-pink-50 border-pink-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-pink-800">Ready to plan your week?</h4>
+                <p className="text-sm text-pink-600 mt-0.5">Break down monthly goals into weekly tasks.</p>
+              </div>
+              <button
+                className="btn-primary flex items-center gap-1"
+                onClick={() => navigate('/weekly-plan')}
+              >
+                Weekly Plan <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

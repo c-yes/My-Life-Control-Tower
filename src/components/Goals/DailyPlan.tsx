@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
 import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Check, X, ArrowRight, Star } from 'lucide-react';
 
 const emptyPlan = (date: string): DailyPlanData => ({
   date,
@@ -63,17 +63,35 @@ export default function DailyPlan() {
     save({ ...plan, tasks: plan.tasks.filter((t) => t.id !== id) });
   }
 
+  function pinToTop3(title: string) {
+    const priorities = [...plan.topPriorities];
+    // If already in top 3, remove it
+    const existingIdx = priorities.indexOf(title);
+    if (existingIdx !== -1) {
+      priorities[existingIdx] = '';
+      save({ ...plan, topPriorities: priorities });
+      return;
+    }
+    // Find next empty slot
+    const emptyIdx = priorities.findIndex((p) => !p.trim());
+    if (emptyIdx !== -1) {
+      priorities[emptyIdx] = title;
+    } else {
+      // Replace last slot
+      priorities[2] = title;
+    }
+    save({ ...plan, topPriorities: priorities });
+  }
+
   const completedCount = plan.tasks.filter((t) => t.completed).length;
+  const achievementPct = plan.tasks.length > 0 ? Math.round((completedCount / plan.tasks.length) * 100) : 0;
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
   return (
     <div className="space-y-6 fade-in max-w-3xl">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="section-title">Daily Plan</h2>
-          <p className="section-subtitle">{formatDateDisplay(new Date(selectedDate + 'T12:00:00'))}</p>
-        </div>
+      {/* Controls */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">{formatDateDisplay(new Date(selectedDate + 'T12:00:00'))}</p>
         <div className="flex items-center gap-2">
           <input
             type="date"
@@ -89,6 +107,23 @@ export default function DailyPlan() {
           </button>
         </div>
       </div>
+
+      {/* Achievement */}
+      {plan.tasks.length > 0 && (
+        <div className="card py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-700">Achievement</span>
+            <span className="text-sm font-bold text-pink-500">{achievementPct}%</span>
+          </div>
+          <div className="progress-bar h-3">
+            <div
+              className="progress-fill h-3"
+              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 mt-1">{completedCount} of {plan.tasks.length} tasks completed</div>
+        </div>
+      )}
 
       {/* Mood */}
       <div className="card">
@@ -112,15 +147,22 @@ export default function DailyPlan() {
         </div>
       </div>
 
+      {/* Section: Goals */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Goals</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+
       {/* Top 3 Priorities */}
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-3">Top 3 Priorities</h3>
+        <p className="text-xs text-slate-400 mb-3">Click the star on a task to auto-fill here.</p>
         <div className="space-y-2">
           {plan.topPriorities.map((p, i) => (
             <div key={i} className="flex items-center gap-3">
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ background: ['#6366f1', '#f59e0b', '#10b981'][i] }}
+                style={{ background: ['#ec4899', '#f59e0b', '#10b981'][i] }}
               >
                 {i + 1}
               </div>
@@ -135,6 +177,12 @@ export default function DailyPlan() {
         </div>
       </div>
 
+      {/* Section: Plan */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Plan</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+
       {/* Tasks */}
       <div className="card">
         <div className="flex items-center justify-between mb-3">
@@ -146,8 +194,8 @@ export default function DailyPlan() {
               <div
                 className="progress-fill"
                 style={{
-                  width: `${plan.tasks.length > 0 ? (completedCount / plan.tasks.length) * 100 : 0}%`,
-                  background: '#6366f1',
+                  width: `${achievementPct}%`,
+                  background: '#ec4899',
                 }}
               />
             </div>
@@ -157,6 +205,7 @@ export default function DailyPlan() {
         <div className="space-y-2 mb-4">
           {plan.tasks.map((task) => {
             const cfg = task.domain ? DOMAIN_CONFIG[task.domain] : null;
+            const isPinned = plan.topPriorities.includes(task.title);
             return (
               <div
                 key={task.id}
@@ -183,6 +232,17 @@ export default function DailyPlan() {
                   </span>
                 )}
                 <button
+                  className={`p-1 rounded transition-colors ${
+                    isPinned
+                      ? 'text-pink-500 hover:text-pink-600'
+                      : 'text-slate-300 hover:text-pink-400'
+                  }`}
+                  onClick={() => pinToTop3(task.title)}
+                  title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
+                >
+                  <Star size={14} fill={isPinned ? 'currentColor' : 'none'} />
+                </button>
+                <button
                   className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
                   onClick={() => deleteTask(task.id)}
                 >
@@ -208,7 +268,7 @@ export default function DailyPlan() {
           >
             {domains.map((d) => (
               <option key={d} value={d}>
-                {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].labelKo}
+                {DOMAIN_CONFIG[d].label}
               </option>
             ))}
           </select>
@@ -220,9 +280,7 @@ export default function DailyPlan() {
 
       {/* Self Feedback */}
       <div className="card">
-        <h3 className="font-bold text-slate-800 mb-2">
-          Self Feedback
-        </h3>
+        <h3 className="font-bold text-slate-800 mb-2">Self Feedback</h3>
         <textarea
           className="textarea h-28"
           placeholder="How was today? What did I learn? What would I do differently?"
@@ -232,14 +290,14 @@ export default function DailyPlan() {
       </div>
 
       {/* Link to Time Block */}
-      <div className="card bg-purple-50 border-purple-100">
+      <div className="card bg-pink-50 border-pink-100">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="font-semibold text-purple-800">Visualize your day</h4>
-            <p className="text-sm text-purple-600 mt-0.5">Plan your time blocks for today.</p>
+            <h4 className="font-semibold text-pink-800">Visualize your day</h4>
+            <p className="text-sm text-pink-600 mt-0.5">Plan your time blocks for today.</p>
           </div>
           <button
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-1"
+            className="btn-primary flex items-center gap-1"
             onClick={() => navigate('/time-block')}
           >
             Time Block <ArrowRight size={14} />

@@ -78,19 +78,11 @@ export default function LifeCompass() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Header */}
-      <div>
-        <h2 className="section-title">Life Compass</h2>
-      </div>
-
       {/* Mission */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">🌟</span>
-          <h3 className="font-bold text-slate-900">Mission Statement — 미션</h3>
-        </div>
+        <h3 className="font-bold text-slate-900 mb-3">Mission Statement</h3>
         <p className="text-xs text-slate-500 mb-2">
-          Why do you exist? What is your purpose? (나는 왜 존재하는가?)
+          Why do you exist? What is your purpose?
         </p>
         <textarea
           className="textarea h-28"
@@ -102,12 +94,9 @@ export default function LifeCompass() {
 
       {/* Vision */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">🔭</span>
-          <h3 className="font-bold text-slate-900">Vision Statement — 비전</h3>
-        </div>
+        <h3 className="font-bold text-slate-900 mb-3">Vision Statement</h3>
         <p className="text-xs text-slate-500 mb-2">
-          What does your ideal future look like? (10년 후 나의 모습은?)
+          What does your ideal future look like?
         </p>
         <textarea
           className="textarea h-28"
@@ -120,10 +109,7 @@ export default function LifeCompass() {
       {/* Core Values */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">💎</span>
-            <h3 className="font-bold text-slate-900">Core Values — 핵심 가치</h3>
-          </div>
+          <h3 className="font-bold text-slate-900">Core Values</h3>
           <button
             className="btn-primary flex items-center gap-1"
             onClick={() => setShowAddValue(true)}
@@ -174,7 +160,7 @@ export default function LifeCompass() {
           {lifeCompass.coreValues.map((value, idx) => (
             <div
               key={value.id}
-              className="p-4 rounded-xl border border-slate-200 bg-gradient-to-br from-indigo-50 to-white"
+              className="p-4 rounded-xl border border-slate-200 bg-gradient-to-br from-pink-50 to-white"
             >
               {editingValueId === value.id ? (
                 <div className="space-y-2">
@@ -201,7 +187,7 @@ export default function LifeCompass() {
                 <>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">
+                      <span className="w-6 h-6 rounded-full bg-pink-500 text-white text-xs flex items-center justify-center font-bold">
                         {idx + 1}
                       </span>
                       <h4 className="font-bold text-slate-800">{value.name}</h4>
@@ -233,10 +219,7 @@ export default function LifeCompass() {
 
       {/* Life Principles */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xl">📜</span>
-          <h3 className="font-bold text-slate-900">Life Principles — 삶의 원칙</h3>
-        </div>
+        <h3 className="font-bold text-slate-900 mb-4">Life Principles</h3>
         <p className="text-xs text-slate-500 mb-3">
           Rules you live by. Guiding principles for decision-making.
         </p>
@@ -262,7 +245,7 @@ export default function LifeCompass() {
                 </>
               ) : (
                 <>
-                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold flex-shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-pink-100 text-pink-600 text-xs flex items-center justify-center font-bold flex-shrink-0">
                     {idx + 1}
                   </span>
                   <span className="flex-1 text-sm text-slate-700">{p}</span>

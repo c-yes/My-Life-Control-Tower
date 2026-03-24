@@ -8,7 +8,6 @@ import {
   getCurrentWeek,
   getWeekDays,
   DAYS_OF_WEEK,
-  DAYS_OF_WEEK_KO,
   formatDateDisplay,
 } from '../../utils/helpers';
 import { Plus, Trash2, Check, X, ArrowRight } from 'lucide-react';
@@ -29,6 +28,7 @@ export default function WeeklyPlan() {
 
   const tasks = weeklyTasks.filter((t) => t.year === year && t.week === week);
   const completedCount = tasks.filter((t) => t.completed).length;
+  const achievementPct = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
   const weekDays = getWeekDays(year, week);
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
@@ -48,10 +48,7 @@ export default function WeeklyPlan() {
     setShowAddForm(false);
   }
 
-  const currentYearMonth = { year, month: weekDays[0]?.getMonth() + 1 };
-  const relevantMonthlyGoals = monthlyGoals.filter(
-    (g) => g.year === currentYearMonth.year
-  );
+  const relevantMonthlyGoals = monthlyGoals.filter((g) => g.year === year);
 
   const weekRange =
     weekDays.length > 0
@@ -62,12 +59,8 @@ export default function WeeklyPlan() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="section-title">Weekly</h2>
-          <p className="section-subtitle">Week {week}, {year} — {weekRange} — {completedCount}/{tasks.length} done</p>
-        </div>
+      {/* Controls */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <select className="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {[getCurrentYear() - 1, getCurrentYear(), getCurrentYear() + 1].map((y) => (
@@ -79,11 +72,29 @@ export default function WeeklyPlan() {
               <option key={w} value={w}>Week {w}</option>
             ))}
           </select>
-          <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-            <Plus size={14} /> Add Task
-          </button>
+          <span className="text-xs text-slate-400">{weekRange}</span>
         </div>
+        <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
+          <Plus size={14} /> Add Task
+        </button>
       </div>
+
+      {/* Achievement */}
+      {tasks.length > 0 && (
+        <div className="card py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-700">Achievement</span>
+            <span className="text-sm font-bold text-pink-500">{achievementPct}%</span>
+          </div>
+          <div className="progress-bar h-3">
+            <div
+              className="progress-fill h-3"
+              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 mt-1">{completedCount} of {tasks.length} tasks completed</div>
+        </div>
+      )}
 
       {/* Add Form */}
       {showAddForm && (
@@ -105,7 +116,7 @@ export default function WeeklyPlan() {
               >
                 {domains.map((d) => (
                   <option key={d} value={d}>
-                    {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label}
+                    {DOMAIN_CONFIG[d].label}
                   </option>
                 ))}
               </select>
@@ -115,7 +126,7 @@ export default function WeeklyPlan() {
                 onChange={(e) => setForm({ ...form, dayOfWeek: Number(e.target.value) })}
               >
                 {DAYS_OF_WEEK.map((day, i) => (
-                  <option key={i} value={i}>{day} ({DAYS_OF_WEEK_KO[i]})</option>
+                  <option key={i} value={i}>{day}</option>
                 ))}
               </select>
             </div>
@@ -127,7 +138,7 @@ export default function WeeklyPlan() {
               <option value="">No linked monthly goal</option>
               {relevantMonthlyGoals.map((mg) => (
                 <option key={mg.id} value={mg.id}>
-                  {DOMAIN_CONFIG[mg.domain].emoji} {mg.title}
+                  {mg.title}
                 </option>
               ))}
             </select>
@@ -143,7 +154,12 @@ export default function WeeklyPlan() {
         </div>
       )}
 
-      {/* 7-column grid */}
+      {/* Section: Goals */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Goals</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+
       {tasks.length === 0 && !showAddForm ? (
         <div className="card text-center py-12">
           <p className="text-slate-400 text-sm">No tasks for week {week}.</p>
@@ -152,93 +168,102 @@ export default function WeeklyPlan() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-2">
-          {DAYS_OF_WEEK.map((day, dayIdx) => {
-            const dayTasks = tasks.filter((t) => t.dayOfWeek === dayIdx);
-            const dayDate = weekDays[dayIdx];
-            const isToday =
-              dayDate && format(dayDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-            return (
-              <div
-                key={dayIdx}
-                className={`rounded-xl border p-3 min-h-32 ${
-                  isToday
-                    ? 'border-indigo-400 bg-indigo-50'
-                    : 'border-slate-200 bg-white'
-                }`}
-              >
-                <div className="mb-2">
-                  <div
-                    className={`text-xs font-bold ${isToday ? 'text-indigo-700' : 'text-slate-600'}`}
-                  >
-                    {DAYS_OF_WEEK_KO[dayIdx]}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {dayDate ? format(dayDate, 'M/d') : ''}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  {dayTasks.map((task) => {
-                    const cfg = DOMAIN_CONFIG[task.domain];
-                    return (
-                      <div
-                        key={task.id}
-                        className="group flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-white"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => updateWeeklyTask(task.id, { completed: !task.completed })}
-                          className="mt-0.5 w-3 h-3 rounded cursor-pointer flex-shrink-0"
-                          style={{ accentColor: cfg.color }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div
-                            className={`text-xs leading-tight ${
-                              task.completed ? 'line-through text-slate-400' : 'text-slate-700'
-                            }`}
-                          >
-                            {task.title}
-                          </div>
-                          <span
-                            className="inline-block mt-0.5 text-xs px-1 rounded"
-                            style={{ background: `${cfg.color}20`, color: cfg.color }}
-                          >
-                            {cfg.emoji}
-                          </span>
-                        </div>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                          onClick={() => deleteWeeklyTask(task.id)}
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                <button
-                  className="mt-2 w-full text-xs text-slate-400 hover:text-indigo-500 flex items-center justify-center gap-1 py-1 rounded hover:bg-indigo-50"
-                  onClick={() => {
-                    setForm({ ...form, dayOfWeek: dayIdx });
-                    setShowAddForm(true);
-                  }}
+        <>
+          {/* Section: Plan */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Plan</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          {/* 7-column grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS_OF_WEEK.map((day, dayIdx) => {
+              const dayTasks = tasks.filter((t) => t.dayOfWeek === dayIdx);
+              const dayDate = weekDays[dayIdx];
+              const isToday =
+                dayDate && format(dayDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+              return (
+                <div
+                  key={dayIdx}
+                  className={`rounded-xl border p-3 min-h-32 ${
+                    isToday
+                      ? 'border-pink-400 bg-pink-50'
+                      : 'border-slate-200 bg-white'
+                  }`}
                 >
-                  <Plus size={11} /> Add
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <div className="mb-2">
+                    <div
+                      className={`text-xs font-bold ${isToday ? 'text-pink-700' : 'text-slate-600'}`}
+                    >
+                      {day.slice(0, 3)}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {dayDate ? format(dayDate, 'M/d') : ''}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {dayTasks.map((task) => {
+                      const cfg = DOMAIN_CONFIG[task.domain];
+                      return (
+                        <div
+                          key={task.id}
+                          className="group flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-white"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => updateWeeklyTask(task.id, { completed: !task.completed })}
+                            className="mt-0.5 w-3 h-3 rounded cursor-pointer flex-shrink-0"
+                            style={{ accentColor: cfg.color }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div
+                              className={`text-xs leading-tight ${
+                                task.completed ? 'line-through text-slate-400' : 'text-slate-700'
+                              }`}
+                            >
+                              {task.title}
+                            </div>
+                            <span
+                              className="inline-block mt-0.5 text-xs px-1 rounded"
+                              style={{ background: `${cfg.color}20`, color: cfg.color }}
+                            >
+                              {cfg.label}
+                            </span>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
+                            onClick={() => deleteWeeklyTask(task.id)}
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    className="mt-2 w-full text-xs text-slate-400 hover:text-pink-500 flex items-center justify-center gap-1 py-1 rounded hover:bg-pink-50"
+                    onClick={() => {
+                      setForm({ ...form, dayOfWeek: dayIdx });
+                      setShowAddForm(true);
+                    }}
+                  >
+                    <Plus size={11} /> Add
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Link to Daily */}
       {tasks.length > 0 && (
-        <div className="card bg-indigo-50 border-indigo-100">
+        <div className="card bg-pink-50 border-pink-100">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-semibold text-indigo-800">Plan your day</h4>
-              <p className="text-sm text-indigo-600 mt-0.5">Break down today's tasks in the daily plan.</p>
+              <h4 className="font-semibold text-pink-800">Plan your day</h4>
+              <p className="text-sm text-pink-600 mt-0.5">Break down today's tasks in the daily plan.</p>
             </div>
             <button
               className="btn-primary flex items-center gap-1"

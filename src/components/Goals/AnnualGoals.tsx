@@ -30,6 +30,11 @@ export default function AnnualGoals() {
   const goals = annualGoals.filter((g) => g.year === year);
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
+  const avgProgress =
+    goals.length > 0
+      ? Math.round(goals.reduce((acc, g) => acc + g.progress, 0) / goals.length)
+      : 0;
+
   function handleAdd() {
     if (!form.title.trim()) return;
     addAnnualGoal({
@@ -95,11 +100,8 @@ export default function AnnualGoals() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Header */}
+      {/* Controls */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="section-title">Annual</h2>
-        </div>
         <div className="flex items-center gap-3">
           <select
             className="select"
@@ -110,11 +112,28 @@ export default function AnnualGoals() {
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
-          <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-            <Plus size={14} /> Add Goal
-          </button>
         </div>
+        <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
+          <Plus size={14} /> Add Goal
+        </button>
       </div>
+
+      {/* Achievement */}
+      {goals.length > 0 && (
+        <div className="card py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-700">Achievement</span>
+            <span className="text-sm font-bold text-pink-500">{avgProgress}%</span>
+          </div>
+          <div className="progress-bar h-3">
+            <div
+              className="progress-fill h-3"
+              style={{ width: `${avgProgress}%`, background: '#ec4899' }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 mt-1">{goals.length} goals · avg progress</div>
+        </div>
+      )}
 
       {/* Add Form */}
       {showAddForm && (
@@ -134,7 +153,7 @@ export default function AnnualGoals() {
             >
               {domains.map((d) => (
                 <option key={d} value={d}>
-                  {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label} ({DOMAIN_CONFIG[d].labelKo})
+                  {DOMAIN_CONFIG[d].label}
                 </option>
               ))}
             </select>
@@ -167,13 +186,21 @@ export default function AnnualGoals() {
         </div>
       )}
 
-      {/* Goals by Domain */}
       {goals.length === 0 && !showAddForm && (
         <div className="card text-center py-12">
           <p className="text-slate-400 text-sm">No goals for {year}. Click "Add Goal" to start!</p>
         </div>
       )}
 
+      {/* Section: Goals */}
+      {goals.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Goals</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+      )}
+
+      {/* Goals by Domain */}
       {domains.map((domain) => {
         const domainGoals = groupedGoals[domain];
         if (domainGoals.length === 0) return null;
@@ -181,10 +208,7 @@ export default function AnnualGoals() {
         return (
           <div key={domain} className="card">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">{cfg.emoji}</span>
-              <h3 className="font-bold text-slate-900">
-                {cfg.label} <span className="text-slate-400 font-normal text-sm">/ {cfg.labelKo}</span>
-              </h3>
+              <h3 className="font-bold text-slate-900">{cfg.label}</h3>
               <span
                 className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full text-white"
                 style={{ background: cfg.color }}
@@ -214,7 +238,7 @@ export default function AnnualGoals() {
                       >
                         {domains.map((d) => (
                           <option key={d} value={d}>
-                            {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label}
+                            {DOMAIN_CONFIG[d].label}
                           </option>
                         ))}
                       </select>
@@ -304,7 +328,7 @@ export default function AnnualGoals() {
                       {/* Link to Monthly */}
                       <div className="mt-3 pt-3 border-t border-slate-100">
                         <button
-                          className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-700"
+                          className="text-xs flex items-center gap-1 text-pink-500 hover:text-pink-600"
                           onClick={() => navigate('/monthly-plan')}
                         >
                           <ArrowRight size={12} />
