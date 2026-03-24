@@ -17,7 +17,7 @@ import { useFirebaseSync } from './hooks/useFirebaseSync';
 
 function AppInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, loading, signInWithGoogle, logout } = useAuth();
+  const { user, loading, authError, signInWithGoogle, logout } = useAuth();
   useFirebaseSync(user);
 
   if (loading) {
@@ -44,6 +44,9 @@ function AppInner() {
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
             Google로 로그인
           </button>
+          {authError && (
+            <p className="text-xs text-red-500 text-center break-all">{authError}</p>
+          )}
         </div>
       </div>
     );
