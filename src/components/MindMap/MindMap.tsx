@@ -1,54 +1,40 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { MindMapData, MindMapNode } from '../../types';
+import { MindMapData } from '../../types';
 import { generateId } from '../../utils/helpers';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 
-const NODE_COLORS = [
-  '#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6',
-  '#ec4899', '#f97316', '#14b8a6', '#ef4444', '#84cc16',
-];
+const EMPTY_CELLS = Array(9).fill('');
 
-const NODE_W = 120;
-const NODE_H = 40;
+// Mandala grid cell order: positions 0-8 where 4 = center
+const CELL_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function MindMap() {
-  const { mindMaps, addMindMap, updateMindMap, deleteMindMap } = useStore();
-  const [activeMindMapId, setActiveMindMapId] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newMapTitle, setNewMapTitle] = useState('');
+  const { mindMaps, addMindMap, deleteMindMap } = useStore();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
 
-  const activeMindMap = activeMindMapId ? mindMaps.find((m) => m.id === activeMindMapId) : null;
+  const active = activeId ? mindMaps.find((m) => m.id === activeId) : null;
 
   function handleCreate() {
-    if (!newMapTitle.trim()) return;
-    const rootId = generateId();
-    const newMap: MindMapData = {
+    if (!newTitle.trim()) return;
+    const map: MindMapData = {
       id: generateId(),
-      title: newMapTitle.trim(),
-      nodes: [
-        {
-          id: rootId,
-          label: newMapTitle.trim(),
-          parentId: null,
-          x: 400,
-          y: 300,
-          color: '#6366f1',
-        },
-      ],
+      title: newTitle.trim(),
+      cells: [...EMPTY_CELLS],
     };
-    addMindMap(newMap);
-    setNewMapTitle('');
-    setShowCreateForm(false);
-    setActiveMindMapId(newMap.id);
+    addMindMap(map);
+    setNewTitle('');
+    setCreating(false);
+    setActiveId(map.id);
   }
 
-  if (activeMindMap) {
+  if (active) {
     return (
-      <MindMapEditor
-        mindMap={activeMindMap}
-        onUpdate={(updates) => updateMindMap(activeMindMap.id, updates)}
-        onBack={() => setActiveMindMapId(null)}
+      <MandalartEditor
+        map={active}
+        onBack={() => setActiveId(null)}
       />
     );
   }
@@ -57,39 +43,39 @@ export default function MindMap() {
     <div className="space-y-6 fade-in">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="section-title">🧠 Mind Map — 마인드맵</h2>
-          <p className="section-subtitle">Visualize ideas with interactive mind maps.</p>
+          <h2 className="section-title">🧠 만다라트 — Mind Map</h2>
+          <p className="section-subtitle">만다라트 형식으로 아이디어를 구조화하세요.</p>
         </div>
-        <button className="btn-primary flex items-center gap-1" onClick={() => setShowCreateForm(true)}>
-          <Plus size={14} /> New Mind Map
+        <button className="btn-primary flex items-center gap-1" onClick={() => setCreating(true)}>
+          <Plus size={14} /> 새 만다라트
         </button>
       </div>
 
-      {showCreateForm && (
+      {creating && (
         <div className="card">
-          <h3 className="font-bold text-slate-800 mb-3">New Mind Map</h3>
+          <h3 className="font-semibold text-slate-800 mb-3">새 만다라트 만들기</h3>
           <div className="flex gap-2">
             <input
               className="input flex-1"
-              placeholder="Mind map title / central topic..."
-              value={newMapTitle}
-              onChange={(e) => setNewMapTitle(e.target.value)}
+              placeholder="만다라트 제목..."
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
             />
-            <button className="btn-primary" onClick={handleCreate}>Create</button>
-            <button className="btn-secondary" onClick={() => setShowCreateForm(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleCreate}>만들기</button>
+            <button className="btn-secondary" onClick={() => setCreating(false)}>취소</button>
           </div>
         </div>
       )}
 
-      {mindMaps.length === 0 && !showCreateForm && (
+      {mindMaps.length === 0 && !creating && (
         <div className="card text-center py-16">
           <div className="text-4xl mb-3">🧠</div>
-          <p className="text-slate-600 font-medium">No mind maps yet</p>
-          <p className="text-slate-400 text-sm mt-1">Create your first mind map to organize ideas visually</p>
-          <button className="btn-primary mt-4" onClick={() => setShowCreateForm(true)}>
-            Create First Mind Map
+          <p className="text-slate-600 font-medium">아직 만다라트가 없습니다</p>
+          <p className="text-slate-400 text-sm mt-1">핵심 주제를 중심으로 8가지 아이디어를 펼쳐보세요</p>
+          <button className="btn-primary mt-4" onClick={() => setCreating(true)}>
+            첫 만다라트 만들기
           </button>
         </div>
       )}
@@ -98,26 +84,43 @@ export default function MindMap() {
         {mindMaps.map((map) => (
           <div
             key={map.id}
-            className="card hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setActiveMindMapId(map.id)}
+            className="card hover:shadow-md transition-shadow cursor-pointer group"
+            onClick={() => setActiveId(map.id)}
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-2xl mb-2">🧠</div>
-                <h3 className="font-bold text-slate-800">{map.title}</h3>
-                <p className="text-sm text-slate-400 mt-1">{map.nodes.length} nodes</p>
-              </div>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                {map.title}
+              </h3>
               <button
-                className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteMindMap(map.id);
-                }}
+                className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors"
+                onClick={(e) => { e.stopPropagation(); deleteMindMap(map.id); }}
               >
-                <Trash2 size={15} />
+                <Trash2 size={14} />
               </button>
             </div>
-            <button className="mt-3 btn-secondary text-xs w-full">Open Editor →</button>
+            {/* Mini 3x3 preview */}
+            <div
+              className="grid gap-1"
+              style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+            >
+              {CELL_POSITIONS.map((i) => (
+                <div
+                  key={i}
+                  className="rounded text-xs p-1 truncate text-center"
+                  style={{
+                    background: i === 4 ? '#1e1e2e' : '#2a2a3e',
+                    color: i === 4 ? '#f97316' : '#94a3b8',
+                    border: i === 4 ? '1px solid #f97316' : '1px solid #3f3f5a',
+                    minHeight: 24,
+                  }}
+                >
+                  {map.cells[i] || (i === 4 ? map.title : '')}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-2 text-right">
+              {map.cells.filter((c) => c.trim()).length}/9 칸 작성
+            </p>
           </div>
         ))}
       </div>
@@ -125,314 +128,130 @@ export default function MindMap() {
   );
 }
 
-function MindMapEditor({
-  mindMap,
-  onUpdate,
-  onBack,
-}: {
-  mindMap: MindMapData;
-  onUpdate: (updates: Partial<MindMapData>) => void;
-  onBack: () => void;
-}) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [dragging, setDragging] = useState<{ nodeId: string; offsetX: number; offsetY: number } | null>(null);
-  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-  const [editingLabel, setEditingLabel] = useState('');
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
-  const [svgSize, setSvgSize] = useState({ w: 900, h: 600 });
-  const containerRef = useRef<HTMLDivElement>(null);
+function MandalartEditor({ map, onBack }: { map: MindMapData; onBack: () => void }) {
+  const { updateMindMap } = useStore();
+  const [cells, setCells] = useState<string[]>(
+    map.cells.length === 9 ? map.cells : [...EMPTY_CELLS]
+  );
+  const [title, setTitle] = useState(map.title);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingCell, setEditingCell] = useState<number | null>(null);
 
-  useEffect(() => {
-    function updateSize() {
-      if (containerRef.current) {
-        setSvgSize({
-          w: containerRef.current.offsetWidth,
-          h: containerRef.current.offsetHeight,
-        });
-      }
+  function saveCell(idx: number, value: string) {
+    const next = cells.map((c, i) => (i === idx ? value : c));
+    setCells(next);
+    updateMindMap(map.id, { cells: next });
+  }
+
+  function saveTitle() {
+    if (title.trim()) {
+      updateMindMap(map.id, { title: title.trim() });
     }
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  function updateNodes(nodes: MindMapNode[]) {
-    onUpdate({ nodes });
+    setEditingTitle(false);
   }
-
-  function handleMouseDown(e: React.MouseEvent, nodeId: string) {
-    e.stopPropagation();
-    const node = mindMap.nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-    const rect = svgRef.current!.getBoundingClientRect();
-    setDragging({
-      nodeId,
-      offsetX: e.clientX - rect.left - node.x,
-      offsetY: e.clientY - rect.top - node.y,
-    });
-    setSelectedNodeId(nodeId);
-    setContextMenu(null);
-  }
-
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!dragging) return;
-    const rect = svgRef.current!.getBoundingClientRect();
-    const x = e.clientX - rect.left - dragging.offsetX;
-    const y = e.clientY - rect.top - dragging.offsetY;
-    updateNodes(
-      mindMap.nodes.map((n) =>
-        n.id === dragging.nodeId ? { ...n, x: Math.max(60, x), y: Math.max(20, y) } : n
-      )
-    );
-  }
-
-  function handleMouseUp() {
-    setDragging(null);
-  }
-
-  function handleDoubleClick(e: React.MouseEvent, nodeId: string) {
-    e.stopPropagation();
-    // Add child node
-    const parent = mindMap.nodes.find((n) => n.id === nodeId);
-    if (!parent) return;
-    const childIdx = mindMap.nodes.filter((n) => n.parentId === nodeId).length;
-    const angle = (childIdx * 45 + 30) * (Math.PI / 180);
-    const radius = 160;
-    const newNode: MindMapNode = {
-      id: generateId(),
-      label: 'New Node',
-      parentId: nodeId,
-      x: parent.x + Math.cos(angle) * radius,
-      y: parent.y + Math.sin(angle) * radius,
-      color: NODE_COLORS[(mindMap.nodes.length) % NODE_COLORS.length],
-    };
-    const newNodes = [...mindMap.nodes, newNode];
-    updateNodes(newNodes);
-    // Start editing the new node
-    setEditingNodeId(newNode.id);
-    setEditingLabel('New Node');
-  }
-
-  function handleContextMenu(e: React.MouseEvent, nodeId: string) {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = svgRef.current!.getBoundingClientRect();
-    setContextMenu({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      nodeId,
-    });
-  }
-
-  function deleteNode(nodeId: string) {
-    // Delete node and all descendants
-    const toDelete = new Set<string>();
-    function collectDescendants(id: string) {
-      toDelete.add(id);
-      mindMap.nodes.filter((n) => n.parentId === id).forEach((n) => collectDescendants(n.id));
-    }
-    collectDescendants(nodeId);
-    updateNodes(mindMap.nodes.filter((n) => !toDelete.has(n.id)));
-    setContextMenu(null);
-    if (selectedNodeId && toDelete.has(selectedNodeId)) setSelectedNodeId(null);
-  }
-
-  function startEditLabel(nodeId: string) {
-    const node = mindMap.nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-    setEditingNodeId(nodeId);
-    setEditingLabel(node.label);
-    setContextMenu(null);
-  }
-
-  function saveLabel() {
-    if (!editingNodeId) return;
-    updateNodes(
-      mindMap.nodes.map((n) =>
-        n.id === editingNodeId ? { ...n, label: editingLabel.trim() || n.label } : n
-      )
-    );
-    setEditingNodeId(null);
-  }
-
-  function changeNodeColor(nodeId: string, color: string) {
-    updateNodes(mindMap.nodes.map((n) => (n.id === nodeId ? { ...n, color } : n)));
-    setContextMenu(null);
-  }
-
-  const rootNode = mindMap.nodes.find((n) => n.parentId === null);
 
   return (
-    <div className="flex flex-col space-y-3 fade-in" style={{ height: 'calc(100vh - 180px)' }}>
-      {/* Toolbar */}
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button className="btn-secondary flex items-center gap-1" onClick={onBack}>
-            <ArrowLeft size={14} /> Back
-          </button>
-          <h2 className="text-lg font-bold text-slate-900">{mindMap.title}</h2>
-          <span className="text-sm text-slate-400">{mindMap.nodes.length} nodes</span>
-        </div>
-        <div className="text-xs text-slate-400">
-          Double-click node to add child · Right-click to delete/rename · Drag to move
+    <div className="space-y-6 fade-in">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          className="btn-secondary flex items-center gap-1"
+          onClick={onBack}
+        >
+          <ArrowLeft size={14} /> 목록으로
+        </button>
+        <div className="flex-1">
+          {editingTitle ? (
+            <input
+              className="input text-lg font-bold"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={saveTitle}
+              onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
+              autoFocus
+            />
+          ) : (
+            <h2
+              className="text-xl font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors"
+              onClick={() => setEditingTitle(true)}
+            >
+              {title}
+              <span className="ml-2 text-sm font-normal text-slate-400">클릭해서 수정</span>
+            </h2>
+          )}
         </div>
       </div>
 
-      {/* Canvas */}
+      {/* Mandalart 3x3 Grid */}
       <div
-        ref={containerRef}
-        className="flex-1 bg-white rounded-xl border border-slate-200 overflow-hidden relative"
-        onClick={() => { setSelectedNodeId(null); setContextMenu(null); }}
+        className="rounded-2xl p-6"
+        style={{ background: '#0f0f1a' }}
       >
-        <svg
-          ref={svgRef}
-          width="100%"
-          height="100%"
-          className="mind-map-canvas"
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+        {/* Title bar */}
+        <div
+          className="text-base font-bold mb-5 pb-3"
+          style={{
+            color: '#f8fafc',
+            borderBottom: '2px solid #f97316',
+            display: 'inline-block',
+            paddingRight: '2rem',
+          }}
         >
-          {/* Edges */}
-          {mindMap.nodes.map((node) => {
-            if (!node.parentId) return null;
-            const parent = mindMap.nodes.find((n) => n.id === node.parentId);
-            if (!parent) return null;
-            return (
-              <line
-                key={`edge-${node.id}`}
-                x1={parent.x}
-                y1={parent.y}
-                x2={node.x}
-                y2={node.y}
-                stroke="#cbd5e1"
-                strokeWidth={2}
-                strokeLinecap="round"
-              />
-            );
-          })}
+          {title}
+        </div>
 
-          {/* Nodes */}
-          {mindMap.nodes.map((node) => {
-            const isRoot = !node.parentId;
-            const w = isRoot ? 140 : NODE_W;
-            const h = isRoot ? 48 : NODE_H;
-            const isSelected = selectedNodeId === node.id;
-            const isEditing = editingNodeId === node.id;
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+        >
+          {CELL_POSITIONS.map((idx) => {
+            const isCenter = idx === 4;
+            const isEditing = editingCell === idx;
 
             return (
-              <g
-                key={node.id}
-                transform={`translate(${node.x - w / 2}, ${node.y - h / 2})`}
-                className="mind-map-node"
-                onMouseDown={(e) => handleMouseDown(e, node.id)}
-                onDoubleClick={(e) => handleDoubleClick(e, node.id)}
-                onContextMenu={(e) => handleContextMenu(e, node.id)}
+              <div
+                key={idx}
+                className="relative rounded-xl cursor-text"
+                style={{
+                  background: isCenter ? '#1c1c2e' : '#16162a',
+                  border: isCenter ? '2px solid #f97316' : '1px solid #2d2d4a',
+                  minHeight: 120,
+                  padding: '12px',
+                  transition: 'border-color 0.15s',
+                }}
+                onClick={() => !isEditing && setEditingCell(idx)}
               >
-                <rect
-                  width={w}
-                  height={h}
-                  rx={isRoot ? 12 : 8}
-                  fill={node.color}
-                  stroke={isSelected ? '#1e293b' : 'transparent'}
-                  strokeWidth={2}
-                  opacity={0.9}
-                />
                 {isEditing ? (
-                  <foreignObject x={4} y={h / 2 - 12} width={w - 8} height={24}>
-                    <input
-                      style={{
-                        width: '100%',
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        color: 'white',
-                        fontSize: isRoot ? '13px' : '11px',
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      }}
-                      value={editingLabel}
-                      onChange={(e) => setEditingLabel(e.target.value)}
-                      onBlur={saveLabel}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveLabel();
-                        if (e.key === 'Escape') setEditingNodeId(null);
-                      }}
-                      autoFocus
-                    />
-                  </foreignObject>
+                  <textarea
+                    autoFocus
+                    className="w-full h-full resize-none bg-transparent outline-none text-sm"
+                    style={{ color: isCenter ? '#f97316' : '#e2e8f0', minHeight: 96 }}
+                    value={cells[idx]}
+                    placeholder={isCenter ? '핵심 주제...' : '생각 입력...'}
+                    onChange={(e) => saveCell(idx, e.target.value)}
+                    onBlur={() => setEditingCell(null)}
+                  />
                 ) : (
-                  <text
-                    x={w / 2}
-                    y={h / 2}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="white"
-                    fontSize={isRoot ? 13 : 11}
-                    fontWeight="bold"
-                    style={{ userSelect: 'none', pointerEvents: 'none' }}
+                  <div
+                    className="text-sm whitespace-pre-wrap"
+                    style={{
+                      color: cells[idx]
+                        ? isCenter ? '#f97316' : '#e2e8f0'
+                        : '#3f3f5a',
+                      minHeight: 96,
+                    }}
                   >
-                    {node.label.length > 14 ? node.label.slice(0, 13) + '…' : node.label}
-                  </text>
+                    {cells[idx] || (isCenter ? '핵심 주제...' : '생각 입력...')}
+                  </div>
                 )}
-              </g>
+              </div>
             );
           })}
-        </svg>
+        </div>
 
-        {/* Context Menu */}
-        {contextMenu && (
-          <div
-            className="absolute bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-20 min-w-36"
-            style={{ left: contextMenu.x + 8, top: contextMenu.y + 8 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-              onClick={() => startEditLabel(contextMenu.nodeId)}
-            >
-              ✏️ Rename
-            </button>
-            <div className="px-4 py-2">
-              <div className="text-xs text-slate-400 mb-1.5">Color</div>
-              <div className="flex gap-1.5 flex-wrap">
-                {NODE_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    className="w-5 h-5 rounded-full border border-white"
-                    style={{ background: color }}
-                    onClick={() => changeNodeColor(contextMenu.nodeId, color)}
-                  />
-                ))}
-              </div>
-            </div>
-            {contextMenu.nodeId !== rootNode?.id && (
-              <>
-                <hr className="my-1 border-slate-100" />
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-                  onClick={() => deleteNode(contextMenu.nodeId)}
-                >
-                  🗑️ Delete node
-                </button>
-              </>
-            )}
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-50"
-              onClick={() => setContextMenu(null)}
-            >
-              Close
-            </button>
-          </div>
-        )}
-
-        {/* Hint */}
-        {mindMap.nodes.length <= 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-slate-400 bg-white border border-slate-200 px-3 py-1.5 rounded-full">
-            Double-click the central node to add child nodes
-          </div>
-        )}
+        <p className="text-xs mt-4" style={{ color: '#4a4a6a' }}>
+          각 칸을 클릭하여 내용을 입력하세요 · 자동 저장됩니다
+        </p>
       </div>
     </div>
   );

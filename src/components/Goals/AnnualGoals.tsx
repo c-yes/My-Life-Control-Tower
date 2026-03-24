@@ -15,14 +15,14 @@ export default function AnnualGoals() {
 
   const [form, setForm] = useState({
     title: '',
-    domain: 'health' as Domain,
+    domain: 'output' as Domain,
     description: '',
     progress: 0,
   });
 
   const [editForm, setEditForm] = useState({
     title: '',
-    domain: 'health' as Domain,
+    domain: 'output' as Domain,
     description: '',
     progress: 0,
   });
@@ -41,7 +41,7 @@ export default function AnnualGoals() {
       year,
       milestones: [],
     });
-    setForm({ title: '', domain: 'health', description: '', progress: 0 });
+    setForm({ title: '', domain: 'output', description: '', progress: 0 });
     setShowAddForm(false);
   }
 

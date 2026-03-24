@@ -13,7 +13,7 @@ export default function MonthlyPlan() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({
     title: '',
-    domain: 'health' as Domain,
+    domain: 'output' as Domain,
     annualGoalId: '',
   });
 
@@ -33,7 +33,7 @@ export default function MonthlyPlan() {
       year,
       month,
     });
-    setForm({ title: '', domain: 'health', annualGoalId: '' });
+    setForm({ title: '', domain: 'output', annualGoalId: '' });
     setShowAddForm(false);
   }
 

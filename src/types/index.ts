@@ -1,12 +1,12 @@
-export type Domain = 'health' | 'relationships' | 'career' | 'finance' | 'growth' | 'recreation';
+export type Domain = 'output' | 'input' | 'system' | 'relation' | 'monetization' | 'care';
 
 export const DOMAIN_CONFIG: Record<Domain, { label: string; labelKo: string; color: string; emoji: string }> = {
-  health: { label: 'Health', labelKo: '건강', color: '#10b981', emoji: '💪' },
-  relationships: { label: 'Relationships', labelKo: '관계', color: '#f59e0b', emoji: '❤️' },
-  career: { label: 'Career', labelKo: '커리어', color: '#3b82f6', emoji: '💼' },
-  finance: { label: 'Finance', labelKo: '재무', color: '#8b5cf6', emoji: '💰' },
-  growth: { label: 'Growth', labelKo: '성장', color: '#ec4899', emoji: '🌱' },
-  recreation: { label: 'Recreation', labelKo: '여가', color: '#f97316', emoji: '🎯' },
+  output:       { label: 'Output',       labelKo: '만들기', color: '#f97316', emoji: '⚡' },
+  input:        { label: 'Input',        labelKo: '배우기', color: '#84cc16', emoji: '📚' },
+  system:       { label: 'System',       labelKo: '유지하기', color: '#22c55e', emoji: '⚙️' },
+  relation:     { label: 'Relation',     labelKo: '연결하기', color: '#a855f7', emoji: '🤝' },
+  monetization: { label: 'Monetization', labelKo: '벌기',   color: '#ef4444', emoji: '💰' },
+  care:         { label: 'Care',         labelKo: '돌보기', color: '#fbbf24', emoji: '💛' },
 };
 
 export interface CoreValue {
@@ -82,6 +82,51 @@ export interface TimeBlockData {
   color: string;
 }
 
+// ── Miracle 21 ───────────────────────────────────────────────────────────────
+
+export interface Miracle21DayEntry {
+  completed: boolean;
+  note: string;
+}
+
+export interface Miracle21Step {
+  id: string;
+  goal: string;
+  startDate: string; // YYYY-MM-DD
+  days: Miracle21DayEntry[]; // always 21 entries
+  feedback: string;
+}
+
+export interface Miracle21Habit {
+  id: string;
+  name: string;
+  finalGoal: string;
+  steps: Miracle21Step[];
+}
+
+// ── Mandalart Mind Map ───────────────────────────────────────────────────────
+
+export interface MindMapData {
+  id: string;
+  title: string;
+  cells: string[]; // 9 cells; index 4 = center (핵심 주제)
+}
+
+// ── Domain Tracker ───────────────────────────────────────────────────────────
+
+export interface DomainEntry {
+  date: string; // YYYY-MM-DD
+  domain: Domain;
+  note: string;
+}
+
+export interface DomainScore {
+  domain: Domain;
+  score: number;
+  notes: string;
+}
+
+// Legacy habit (kept for backward compatibility)
 export interface Habit {
   id: string;
   name: string;
@@ -90,25 +135,4 @@ export interface Habit {
   completions: string[];
   color: string;
   icon: string;
-}
-
-export interface MindMapNode {
-  id: string;
-  label: string;
-  parentId: string | null;
-  x: number;
-  y: number;
-  color: string;
-}
-
-export interface MindMapData {
-  id: string;
-  title: string;
-  nodes: MindMapNode[];
-}
-
-export interface DomainScore {
-  domain: Domain;
-  score: number;
-  notes: string;
 }

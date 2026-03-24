@@ -22,7 +22,7 @@ export default function WeeklyPlan() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({
     title: '',
-    domain: 'health' as Domain,
+    domain: 'output' as Domain,
     dayOfWeek: 0,
     monthlyGoalId: '',
   });
@@ -44,7 +44,7 @@ export default function WeeklyPlan() {
       week,
       monthlyGoalId: form.monthlyGoalId || undefined,
     });
-    setForm({ title: '', domain: 'health', dayOfWeek: 0, monthlyGoalId: '' });
+    setForm({ title: '', domain: 'output', dayOfWeek: 0, monthlyGoalId: '' });
     setShowAddForm(false);
   }
 

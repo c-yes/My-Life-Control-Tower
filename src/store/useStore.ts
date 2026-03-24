@@ -10,6 +10,8 @@ import {
   Habit,
   MindMapData,
   DomainScore,
+  DomainEntry,
+  Miracle21Habit,
   Domain,
 } from '../types';
 
@@ -46,20 +48,30 @@ interface AppState {
   updateTimeBlock: (id: string, updates: Partial<TimeBlockData>) => void;
   deleteTimeBlock: (id: string) => void;
 
-  // Habits (Miracle21)
+  // Miracle 21
+  miracle21Habits: Miracle21Habit[];
+  addMiracle21Habit: (habit: Miracle21Habit) => void;
+  updateMiracle21Habit: (id: string, updates: Partial<Miracle21Habit>) => void;
+  deleteMiracle21Habit: (id: string) => void;
+
+  // Legacy habits (unused by UI, kept so old data survives)
   habits: Habit[];
   addHabit: (habit: Habit) => void;
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   toggleHabitCompletion: (habitId: string, date: string) => void;
 
-  // Mind Maps
+  // Mind Maps (Mandalart)
   mindMaps: MindMapData[];
   addMindMap: (map: MindMapData) => void;
   updateMindMap: (id: string, updates: Partial<MindMapData>) => void;
   deleteMindMap: (id: string) => void;
 
-  // Domain Scores
+  // Domain Tracker entries (weekly table)
+  domainEntries: DomainEntry[];
+  upsertDomainEntry: (date: string, domain: Domain, note: string) => void;
+
+  // Domain Scores (kept for Dashboard avg score)
   domainScores: DomainScore[];
   updateDomainScore: (domain: Domain, score: number, notes: string) => void;
 }
@@ -72,12 +84,12 @@ const defaultLifeCompass: LifeCompassData = {
 };
 
 const defaultDomainScores: DomainScore[] = [
-  { domain: 'health', score: 5, notes: '' },
-  { domain: 'relationships', score: 5, notes: '' },
-  { domain: 'career', score: 5, notes: '' },
-  { domain: 'finance', score: 5, notes: '' },
-  { domain: 'growth', score: 5, notes: '' },
-  { domain: 'recreation', score: 5, notes: '' },
+  { domain: 'output',       score: 5, notes: '' },
+  { domain: 'input',        score: 5, notes: '' },
+  { domain: 'system',       score: 5, notes: '' },
+  { domain: 'relation',     score: 5, notes: '' },
+  { domain: 'monetization', score: 5, notes: '' },
+  { domain: 'care',         score: 5, notes: '' },
 ];
 
 export const useStore = create<AppState>()(
@@ -94,14 +106,10 @@ export const useStore = create<AppState>()(
         set((state) => ({ annualGoals: [...state.annualGoals, goal] })),
       updateAnnualGoal: (id, updates) =>
         set((state) => ({
-          annualGoals: state.annualGoals.map((g) =>
-            g.id === id ? { ...g, ...updates } : g
-          ),
+          annualGoals: state.annualGoals.map((g) => (g.id === id ? { ...g, ...updates } : g)),
         })),
       deleteAnnualGoal: (id) =>
-        set((state) => ({
-          annualGoals: state.annualGoals.filter((g) => g.id !== id),
-        })),
+        set((state) => ({ annualGoals: state.annualGoals.filter((g) => g.id !== id) })),
 
       // Monthly Goals
       monthlyGoals: [],
@@ -109,14 +117,10 @@ export const useStore = create<AppState>()(
         set((state) => ({ monthlyGoals: [...state.monthlyGoals, goal] })),
       updateMonthlyGoal: (id, updates) =>
         set((state) => ({
-          monthlyGoals: state.monthlyGoals.map((g) =>
-            g.id === id ? { ...g, ...updates } : g
-          ),
+          monthlyGoals: state.monthlyGoals.map((g) => (g.id === id ? { ...g, ...updates } : g)),
         })),
       deleteMonthlyGoal: (id) =>
-        set((state) => ({
-          monthlyGoals: state.monthlyGoals.filter((g) => g.id !== id),
-        })),
+        set((state) => ({ monthlyGoals: state.monthlyGoals.filter((g) => g.id !== id) })),
 
       // Weekly Tasks
       weeklyTasks: [],
@@ -124,14 +128,10 @@ export const useStore = create<AppState>()(
         set((state) => ({ weeklyTasks: [...state.weeklyTasks, task] })),
       updateWeeklyTask: (id, updates) =>
         set((state) => ({
-          weeklyTasks: state.weeklyTasks.map((t) =>
-            t.id === id ? { ...t, ...updates } : t
-          ),
+          weeklyTasks: state.weeklyTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
         })),
       deleteWeeklyTask: (id) =>
-        set((state) => ({
-          weeklyTasks: state.weeklyTasks.filter((t) => t.id !== id),
-        })),
+        set((state) => ({ weeklyTasks: state.weeklyTasks.filter((t) => t.id !== id) })),
 
       // Daily Plans
       dailyPlans: [],
@@ -139,11 +139,7 @@ export const useStore = create<AppState>()(
         set((state) => {
           const exists = state.dailyPlans.find((p) => p.date === plan.date);
           if (exists) {
-            return {
-              dailyPlans: state.dailyPlans.map((p) =>
-                p.date === plan.date ? plan : p
-              ),
-            };
+            return { dailyPlans: state.dailyPlans.map((p) => (p.date === plan.date ? plan : p)) };
           }
           return { dailyPlans: [...state.dailyPlans, plan] };
         }),
@@ -154,29 +150,36 @@ export const useStore = create<AppState>()(
         set((state) => ({ timeBlocks: [...state.timeBlocks, block] })),
       updateTimeBlock: (id, updates) =>
         set((state) => ({
-          timeBlocks: state.timeBlocks.map((b) =>
-            b.id === id ? { ...b, ...updates } : b
-          ),
+          timeBlocks: state.timeBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)),
         })),
       deleteTimeBlock: (id) =>
+        set((state) => ({ timeBlocks: state.timeBlocks.filter((b) => b.id !== id) })),
+
+      // Miracle 21
+      miracle21Habits: [],
+      addMiracle21Habit: (habit) =>
+        set((state) => ({ miracle21Habits: [...state.miracle21Habits, habit] })),
+      updateMiracle21Habit: (id, updates) =>
         set((state) => ({
-          timeBlocks: state.timeBlocks.filter((b) => b.id !== id),
+          miracle21Habits: state.miracle21Habits.map((h) =>
+            h.id === id ? { ...h, ...updates } : h
+          ),
+        })),
+      deleteMiracle21Habit: (id) =>
+        set((state) => ({
+          miracle21Habits: state.miracle21Habits.filter((h) => h.id !== id),
         })),
 
-      // Habits
+      // Legacy habits
       habits: [],
       addHabit: (habit) =>
         set((state) => ({ habits: [...state.habits, habit] })),
       updateHabit: (id, updates) =>
         set((state) => ({
-          habits: state.habits.map((h) =>
-            h.id === id ? { ...h, ...updates } : h
-          ),
+          habits: state.habits.map((h) => (h.id === id ? { ...h, ...updates } : h)),
         })),
       deleteHabit: (id) =>
-        set((state) => ({
-          habits: state.habits.filter((h) => h.id !== id),
-        })),
+        set((state) => ({ habits: state.habits.filter((h) => h.id !== id) })),
       toggleHabitCompletion: (habitId, date) =>
         set((state) => ({
           habits: state.habits.map((h) => {
@@ -194,14 +197,27 @@ export const useStore = create<AppState>()(
         set((state) => ({ mindMaps: [...state.mindMaps, map] })),
       updateMindMap: (id, updates) =>
         set((state) => ({
-          mindMaps: state.mindMaps.map((m) =>
-            m.id === id ? { ...m, ...updates } : m
-          ),
+          mindMaps: state.mindMaps.map((m) => (m.id === id ? { ...m, ...updates } : m)),
         })),
       deleteMindMap: (id) =>
-        set((state) => ({
-          mindMaps: state.mindMaps.filter((m) => m.id !== id),
-        })),
+        set((state) => ({ mindMaps: state.mindMaps.filter((m) => m.id !== id) })),
+
+      // Domain Tracker entries
+      domainEntries: [],
+      upsertDomainEntry: (date, domain, note) =>
+        set((state) => {
+          const exists = state.domainEntries.find(
+            (e) => e.date === date && e.domain === domain
+          );
+          if (exists) {
+            return {
+              domainEntries: state.domainEntries.map((e) =>
+                e.date === date && e.domain === domain ? { ...e, note } : e
+              ),
+            };
+          }
+          return { domainEntries: [...state.domainEntries, { date, domain, note }] };
+        }),
 
       // Domain Scores
       domainScores: defaultDomainScores,

@@ -19,7 +19,7 @@ export default function DailyPlan() {
   const { dailyPlans, upsertDailyPlan } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDomain, setNewTaskDomain] = useState<Domain>('health');
+  const [newTaskDomain, setNewTaskDomain] = useState<Domain>('output');
 
   const existing = dailyPlans.find((p) => p.date === selectedDate);
   const [plan, setPlan] = useState<DailyPlanData>(existing ?? emptyPlan(selectedDate));

@@ -1,268 +1,510 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Domain, DOMAIN_CONFIG, Habit } from '../../types';
-import {
-  generateId,
-  getTodayString,
-  calculateStreak,
-  getCompletionRate,
-  formatDateDisplay,
-} from '../../utils/helpers';
-import { Plus, Trash2, Check, X, Flame } from 'lucide-react';
-import { addDays, format } from 'date-fns';
+import { Miracle21Habit, Miracle21Step } from '../../types';
+import { generateId } from '../../utils/helpers';
+import { format, addDays } from 'date-fns';
+import { Check, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const HABIT_ICONS = ['🏃', '📚', '🧘', '💪', '🥗', '💧', '😴', '✍️', '🎯', '🌿', '🎵', '🧹'];
+function makeEmptyDays() {
+  return Array.from({ length: 21 }, () => ({ completed: false, note: '' }));
+}
+
+function makeStep(stepNumber: number, startDate: string): Miracle21Step {
+  return {
+    id: generateId(),
+    goal: '',
+    startDate,
+    days: makeEmptyDays(),
+    feedback: '',
+  };
+}
+
+function getDayDate(startDate: string, dayIndex: number): string {
+  return format(addDays(new Date(startDate + 'T12:00:00'), dayIndex), 'yyyy-MM-dd');
+}
+
+function getStepProgress(step: Miracle21Step): { done: number; pct: number } {
+  const done = step.days.filter((d) => d.completed).length;
+  return { done, pct: Math.round((done / 21) * 100) };
+}
 
 export default function Miracle21() {
-  const { habits, addHabit, deleteHabit, toggleHabitCompletion } = useStore();
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    domain: 'health' as Domain,
-    icon: '🏃',
-    color: '#10b981',
-  });
+  const { miracle21Habits, addMiracle21Habit, updateMiracle21Habit, deleteMiracle21Habit } =
+    useStore();
+  const [selectedId, setSelectedId] = useState<string | null>(
+    miracle21Habits[0]?.id ?? null
+  );
+  const [creatingName, setCreatingName] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
-  const today = getTodayString();
-  const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
+  const today = format(new Date(), 'yyyy-MM-dd');
 
-  function handleAdd() {
-    if (!form.name.trim()) return;
-    const newHabit: Habit = {
+  function handleCreate() {
+    if (!creatingName.trim()) return;
+    const habit: Miracle21Habit = {
       id: generateId(),
-      name: form.name.trim(),
-      domain: form.domain,
-      startDate: today,
-      completions: [],
-      color: form.color,
-      icon: form.icon,
+      name: creatingName.trim(),
+      finalGoal: '',
+      steps: [makeStep(1, today)],
     };
-    addHabit(newHabit);
-    setForm({ name: '', domain: 'health', icon: '🏃', color: '#10b981' });
-    setShowAddForm(false);
+    addMiracle21Habit(habit);
+    setCreatingName('');
+    setShowCreate(false);
+    setSelectedId(habit.id);
   }
 
-  function get21Days(startDate: string): string[] {
-    const start = new Date(startDate);
-    return Array.from({ length: 21 }, (_, i) => format(addDays(start, i), 'yyyy-MM-dd'));
+  const selected = selectedId ? miracle21Habits.find((h) => h.id === selectedId) : null;
+
+  // Get active step index (last step)
+  function activeStepIdx(h: Miracle21Habit) {
+    return h.steps.length - 1;
   }
 
   return (
-    <div className="space-y-6 fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="section-title">⭐ Miracle 21 — 21일 습관 형성</h2>
-          <p className="section-subtitle">Build habits in 21 days. Track your streak and completion rate.</p>
-        </div>
-        <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-          <Plus size={14} /> New Habit
+    <div className="flex gap-4 fade-in" style={{ minHeight: 'calc(100vh - 160px)' }}>
+      {/* ── Sidebar ── */}
+      <div
+        className="w-56 flex-shrink-0 rounded-xl p-3 flex flex-col gap-2"
+        style={{ background: '#0f0f1a' }}
+      >
+        {/* New habit button */}
+        <button
+          className="w-full text-center py-2 rounded-lg text-xs border border-dashed transition-colors"
+          style={{ borderColor: '#3f3f5a', color: '#94a3b8' }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#f97316')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#3f3f5a')}
+          onClick={() => setShowCreate(true)}
+        >
+          + 새 습관 만들기
         </button>
-      </div>
 
-      {/* Add Form */}
-      {showAddForm && (
-        <div className="card">
-          <h3 className="font-bold text-slate-800 mb-4">New 21-Day Habit</h3>
-          <div className="space-y-3">
-            <input
-              className="input"
-              placeholder="Habit name..."
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              autoFocus
-            />
-            <select
-              className="select w-full"
-              value={form.domain}
-              onChange={(e) => {
-                const d = e.target.value as Domain;
-                setForm({ ...form, domain: d, color: DOMAIN_CONFIG[d].color });
-              }}
-            >
-              {domains.map((d) => (
-                <option key={d} value={d}>
-                  {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label} ({DOMAIN_CONFIG[d].labelKo})
-                </option>
-              ))}
-            </select>
-            <div>
-              <label className="text-xs text-slate-500 mb-2 block">Icon</label>
-              <div className="flex gap-2 flex-wrap">
-                {HABIT_ICONS.map((icon) => (
-                  <button
-                    key={icon}
-                    className={`w-9 h-9 rounded-lg text-xl flex items-center justify-center border-2 transition-all ${
-                      form.icon === icon
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                    onClick={() => setForm({ ...form, icon })}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button className="btn-primary flex items-center gap-1" onClick={handleAdd}>
-                <Check size={14} /> Start Habit
-              </button>
-              <button className="btn-secondary flex items-center gap-1" onClick={() => setShowAddForm(false)}>
-                <X size={14} /> Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {habits.length === 0 && !showAddForm && (
-        <div className="card text-center py-16">
-          <div className="text-4xl mb-3">⭐</div>
-          <p className="text-slate-600 font-medium">No habits yet</p>
-          <p className="text-slate-400 text-sm mt-1">Start a 21-day challenge to build lasting habits</p>
-          <button className="btn-primary mt-4" onClick={() => setShowAddForm(true)}>
-            Start Your First Habit
-          </button>
-        </div>
-      )}
-
-      {/* Habit Cards */}
-      <div className="space-y-4">
-        {habits.map((habit) => {
-          const streak = calculateStreak(habit.completions, habit.startDate);
-          const completionRate = getCompletionRate(habit.completions, habit.startDate);
-          const days21 = get21Days(habit.startDate);
-          const cfg = DOMAIN_CONFIG[habit.domain];
-          const todayDone = habit.completions.includes(today);
-
+        {miracle21Habits.map((h) => {
+          const stepIdx = activeStepIdx(h);
+          const isSelected = selectedId === h.id;
           return (
-            <div
-              key={habit.id}
-              className="card"
-              style={{ borderLeftWidth: 4, borderLeftColor: habit.color }}
+            <button
+              key={h.id}
+              className="w-full text-left px-3 py-2.5 rounded-lg transition-all"
+              style={{
+                background: isSelected ? '#1c1c2e' : 'transparent',
+                borderLeft: isSelected ? '3px solid #f97316' : '3px solid transparent',
+              }}
+              onClick={() => setSelectedId(h.id)}
             >
-              {/* Habit Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
-                    style={{ background: `${habit.color}20` }}
-                  >
-                    {habit.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900">{habit.name}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full text-white"
-                        style={{ background: cfg.color }}
-                      >
-                        {cfg.emoji} {cfg.labelKo}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        Started {formatDateDisplay(new Date(habit.startDate + 'T12:00:00'))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                      todayDone
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    }`}
-                    onClick={() => toggleHabitCompletion(habit.id, today)}
-                  >
-                    {todayDone ? <><Check size={14} /> Done!</> : <>Mark Today</>}
-                  </button>
-                  <button
-                    className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
-                    onClick={() => deleteHabit(habit.id)}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+              <div className="text-sm font-semibold truncate" style={{ color: isSelected ? '#f97316' : '#e2e8f0' }}>
+                {h.name}
               </div>
-
-              {/* Stats Row */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-orange-50 text-center">
-                  <div className="flex items-center justify-center gap-1 text-orange-500 mb-1">
-                    <Flame size={16} />
-                    <span className="font-bold text-xl">{streak}</span>
-                  </div>
-                  <div className="text-xs text-slate-500">Day Streak</div>
-                </div>
-                <div className="p-3 rounded-xl bg-indigo-50 text-center">
-                  <div className="font-bold text-xl text-indigo-600 mb-1">{completionRate}%</div>
-                  <div className="text-xs text-slate-500">Completion Rate</div>
-                </div>
-                <div className="p-3 rounded-xl bg-green-50 text-center">
-                  <div className="font-bold text-xl text-green-600 mb-1">
-                    {habit.completions.length}
-                  </div>
-                  <div className="text-xs text-slate-500">Total Done</div>
-                </div>
+              <div className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>
+                Step {stepIdx + 1}
               </div>
-
-              {/* 21-Day Grid */}
-              <div>
-                <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
-                  21-Day Challenge
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {days21.map((date, idx) => {
-                    const done = habit.completions.includes(date);
-                    const isPast = date <= today;
-                    const isToday = date === today;
-                    const isFuture = date > today;
-                    return (
-                      <button
-                        key={date}
-                        title={date}
-                        className={`habit-day ${done ? 'completed' : ''} ${isToday ? 'ring-2 ring-indigo-400' : ''}`}
-                        style={
-                          done
-                            ? { background: habit.color, color: 'white', borderColor: habit.color }
-                            : isFuture
-                            ? { opacity: 0.4, cursor: 'default' }
-                            : {}
-                        }
-                        onClick={() => !isFuture && toggleHabitCompletion(habit.id, date)}
-                        disabled={isFuture}
-                      >
-                        {done ? '✓' : idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Progress to 21 */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-slate-500">Progress to 21 days</span>
-                  <span className="text-xs font-medium" style={{ color: habit.color }}>
-                    {habit.completions.length}/21
-                  </span>
-                </div>
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${Math.min((habit.completions.length / 21) * 100, 100)}%`,
-                      background: habit.color,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 min-w-0">
+        {showCreate && (
+          <div className="card mb-4">
+            <h3 className="font-semibold text-slate-800 mb-3">새 습관 만들기</h3>
+            <div className="flex gap-2">
+              <input
+                className="input flex-1"
+                placeholder="습관 이름 (예: 매일 독서)"
+                value={creatingName}
+                onChange={(e) => setCreatingName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                autoFocus
+              />
+              <button className="btn-primary" onClick={handleCreate}>시작</button>
+              <button className="btn-secondary" onClick={() => setShowCreate(false)}>취소</button>
+            </div>
+          </div>
+        )}
+
+        {!selected && !showCreate && (
+          <div className="card text-center py-16">
+            <div className="text-4xl mb-3">⭐</div>
+            <p className="text-slate-600 font-medium">습관을 선택하거나 새로 만드세요</p>
+            <p className="text-slate-400 text-sm mt-1">21일 단위 Step으로 최종 목표를 향해 나아가세요</p>
+            <button className="btn-primary mt-4" onClick={() => setShowCreate(true)}>
+              첫 습관 만들기
+            </button>
+          </div>
+        )}
+
+        {selected && (
+          <HabitDetail
+            habit={selected}
+            today={today}
+            onUpdate={(updates) => updateMiracle21Habit(selected.id, updates)}
+            onDelete={() => {
+              deleteMiracle21Habit(selected.id);
+              setSelectedId(miracle21Habits.find((h) => h.id !== selected.id)?.id ?? null);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// HabitDetail
+// ──────────────────────────────────────────────────────────────────────────────
+
+function HabitDetail({
+  habit,
+  today,
+  onUpdate,
+  onDelete,
+}: {
+  habit: Miracle21Habit;
+  today: string;
+  onUpdate: (updates: Partial<Miracle21Habit>) => void;
+  onDelete: () => void;
+}) {
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(habit.finalGoal);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(habit.name);
+
+  function saveGoal() {
+    onUpdate({ finalGoal: goalDraft });
+    setEditingGoal(false);
+  }
+
+  function saveName() {
+    if (nameDraft.trim()) onUpdate({ name: nameDraft.trim() });
+    setEditingName(false);
+  }
+
+  function updateStep(stepIdx: number, updates: Partial<Miracle21Step>) {
+    const steps = habit.steps.map((s, i) => (i === stepIdx ? { ...s, ...updates } : s));
+    onUpdate({ steps });
+  }
+
+  function addNextStep() {
+    const lastStep = habit.steps[habit.steps.length - 1];
+    const nextStart = getDayDate(lastStep.startDate, 21);
+    const newStep = makeStep(habit.steps.length + 1, nextStart);
+    onUpdate({ steps: [...habit.steps, newStep] });
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Habit name header */}
+      <div className="flex items-center justify-between">
+        {editingName ? (
+          <input
+            className="input text-lg font-bold flex-1 mr-4"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={saveName}
+            onKeyDown={(e) => e.key === 'Enter' && saveName()}
+            autoFocus
+          />
+        ) : (
+          <h2
+            className="text-xl font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors"
+            onClick={() => { setNameDraft(habit.name); setEditingName(true); }}
+          >
+            {habit.name}
+          </h2>
+        )}
+        <button
+          className="text-xs px-3 py-1.5 rounded border border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 transition-colors"
+          onClick={onDelete}
+        >
+          삭제
+        </button>
+      </div>
+
+      {/* Final Goal */}
+      <div
+        className="rounded-xl p-4 border"
+        style={{ background: '#0f0f1a', borderColor: '#2d2d4a' }}
+      >
+        <div className="text-xs font-semibold mb-2" style={{ color: '#f97316' }}>
+          최종 목표 (Final Goal)
+        </div>
+        {editingGoal ? (
+          <textarea
+            autoFocus
+            className="w-full bg-transparent text-sm resize-none outline-none border-b border-slate-600 pb-1"
+            style={{ color: '#e2e8f0' }}
+            value={goalDraft}
+            onChange={(e) => setGoalDraft(e.target.value)}
+            onBlur={saveGoal}
+            rows={2}
+            placeholder="최종적으로 이루고 싶은 목표를 입력하세요..."
+          />
+        ) : (
+          <p
+            className="text-sm cursor-text"
+            style={{ color: habit.finalGoal ? '#e2e8f0' : '#4a4a6a' }}
+            onClick={() => { setGoalDraft(habit.finalGoal); setEditingGoal(true); }}
+          >
+            {habit.finalGoal || '최종적으로 이루고 싶은 목표를 입력하세요...'}
+          </p>
+        )}
+      </div>
+
+      {/* Steps */}
+      {habit.steps.map((step, stepIdx) => (
+        <StepCard
+          key={step.id}
+          step={step}
+          stepNumber={stepIdx + 1}
+          today={today}
+          isLast={stepIdx === habit.steps.length - 1}
+          onChange={(updates) => updateStep(stepIdx, updates)}
+        />
+      ))}
+
+      {/* Add next step button */}
+      {(() => {
+        const lastStep = habit.steps[habit.steps.length - 1];
+        const { done } = getStepProgress(lastStep);
+        // Show "+ Step N 추가" when all 21 days are done or the 21-day window passed
+        const lastDayDate = getDayDate(lastStep.startDate, 20);
+        const canAdd = done >= 21 || lastDayDate < today;
+        if (!canAdd) return null;
+        return (
+          <button
+            className="w-full py-3 text-sm font-medium rounded-xl border border-dashed transition-all"
+            style={{ borderColor: '#f97316', color: '#f97316' }}
+            onClick={addNextStep}
+          >
+            + Step {habit.steps.length + 1} 추가
+          </button>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// StepCard
+// ──────────────────────────────────────────────────────────────────────────────
+
+function StepCard({
+  step,
+  stepNumber,
+  today,
+  isLast,
+  onChange,
+}: {
+  step: Miracle21Step;
+  stepNumber: number;
+  today: string;
+  isLast: boolean;
+  onChange: (updates: Partial<Miracle21Step>) => void;
+}) {
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(step.goal);
+  const [editingDay, setEditingDay] = useState<number | null>(null);
+  const [dayNoteDraft, setDayNoteDraft] = useState('');
+  const [collapsed, setCollapsed] = useState(!isLast);
+
+  const { done, pct } = getStepProgress(step);
+
+  function saveGoal() {
+    onChange({ goal: goalDraft });
+    setEditingGoal(false);
+  }
+
+  function toggleDay(dayIdx: number) {
+    const days = step.days.map((d, i) =>
+      i === dayIdx ? { ...d, completed: !d.completed } : d
+    );
+    onChange({ days });
+  }
+
+  function openDayNote(dayIdx: number) {
+    setDayNoteDraft(step.days[dayIdx].note);
+    setEditingDay(dayIdx);
+  }
+
+  function saveDayNote() {
+    if (editingDay === null) return;
+    const days = step.days.map((d, i) =>
+      i === editingDay ? { ...d, note: dayNoteDraft } : d
+    );
+    onChange({ days });
+    setEditingDay(null);
+  }
+
+  return (
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{ borderColor: '#2d2d4a', background: '#0f0f1a' }}
+    >
+      {/* Step header */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+        style={{ background: '#16162a' }}
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        {/* S badge */}
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+          style={{ background: '#f97316', color: '#fff' }}
+        >
+          S{stepNumber}
+        </div>
+
+        {/* Goal title */}
+        <div className="flex-1 min-w-0">
+          {editingGoal && !collapsed ? (
+            <input
+              autoFocus
+              className="bg-transparent outline-none text-sm font-medium w-full border-b"
+              style={{ color: '#e2e8f0', borderColor: '#f97316' }}
+              value={goalDraft}
+              onChange={(e) => setGoalDraft(e.target.value)}
+              onBlur={saveGoal}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') saveGoal();
+              }}
+              onClick={(e) => e.stopPropagation()}
+              placeholder="이 단계의 목표 (예: 하루 1문장)"
+            />
+          ) : (
+            <span
+              className="text-sm font-medium truncate block"
+              style={{ color: step.goal ? '#e2e8f0' : '#4a4a6a' }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setGoalDraft(step.goal);
+                setEditingGoal(true);
+                if (collapsed) setCollapsed(false);
+              }}
+            >
+              {step.goal || `Step ${stepNumber} 목표 (더블클릭해서 입력)`}
+            </span>
+          )}
+          {/* Underline */}
+          <div
+            className="h-0.5 mt-0.5 rounded-full"
+            style={{ width: '40%', background: '#f97316' }}
+          />
+        </div>
+
+        {/* Progress */}
+        <span className="text-xs flex-shrink-0" style={{ color: '#f97316' }}>
+          {done}/21 ({pct}%)
+        </span>
+        {collapsed ? (
+          <ChevronDown size={16} style={{ color: '#4a4a6a' }} />
+        ) : (
+          <ChevronUp size={16} style={{ color: '#4a4a6a' }} />
+        )}
+      </div>
+
+      {!collapsed && (
+        <div className="p-4 space-y-4">
+          {/* 21-day grid */}
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}
+          >
+            {step.days.map((dayEntry, dayIdx) => {
+              const dateStr = getDayDate(step.startDate, dayIdx);
+              const isToday = dateStr === today;
+              const isFuture = dateStr > today;
+              const isEditing = editingDay === dayIdx;
+
+              return (
+                <div
+                  key={dayIdx}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    border: isToday
+                      ? '2px solid #f97316'
+                      : dayEntry.completed
+                      ? '1px solid #f9731660'
+                      : '1px solid #2d2d4a',
+                    background: dayEntry.completed
+                      ? '#1c1008'
+                      : isToday
+                      ? '#1c120a'
+                      : '#16162a',
+                    opacity: isFuture ? 0.5 : 1,
+                  }}
+                >
+                  {/* Day header */}
+                  <div className="px-1.5 pt-1.5 pb-1 text-center">
+                    <div className="text-xs font-semibold" style={{ color: '#94a3b8' }}>
+                      D{dayIdx + 1}
+                    </div>
+                    <div className="text-xs" style={{ color: '#64748b' }}>
+                      {format(new Date(dateStr + 'T12:00:00'), 'MM-dd')}
+                    </div>
+                  </div>
+
+                  {/* Check area */}
+                  <div
+                    className="flex items-center justify-center py-2 cursor-pointer"
+                    onClick={() => !isFuture && toggleDay(dayIdx)}
+                  >
+                    {dayEntry.completed ? (
+                      <Check size={16} style={{ color: '#f97316' }} />
+                    ) : (
+                      <div
+                        className="w-4 h-4 rounded border"
+                        style={{ borderColor: '#3f3f5a' }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Note area */}
+                  {isEditing ? (
+                    <textarea
+                      autoFocus
+                      className="w-full bg-transparent text-center resize-none outline-none px-1 pb-1"
+                      style={{ color: '#94a3b8', fontSize: 10, minHeight: 36 }}
+                      value={dayNoteDraft}
+                      onChange={(e) => setDayNoteDraft(e.target.value)}
+                      onBlur={saveDayNote}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && saveDayNote()}
+                      placeholder="메모..."
+                    />
+                  ) : (
+                    <div
+                      className="text-center px-1 pb-1.5 cursor-text"
+                      style={{ fontSize: 10, color: dayEntry.note ? '#94a3b8' : '#3f3f5a', minHeight: 24 }}
+                      onClick={() => !isFuture && openDayNote(dayIdx)}
+                    >
+                      {dayEntry.note || '·'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Self feedback */}
+          <div>
+            <div className="text-xs font-semibold mb-1.5" style={{ color: '#f97316' }}>
+              셀프 피드백
+            </div>
+            <textarea
+              className="w-full rounded-xl border text-sm resize-none p-3"
+              style={{
+                background: '#16162a',
+                borderColor: '#2d2d4a',
+                color: '#e2e8f0',
+                minHeight: 80,
+              }}
+              value={step.feedback}
+              onChange={(e) => onChange({ feedback: e.target.value })}
+              placeholder="21일을 돌이보며 — 무엇이 달라졌는가? 다음 스텝 목표는?"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
