@@ -8,8 +8,10 @@ import { Plus, Trash2, Check, X, ArrowRight, Star } from 'lucide-react';
 const emptyPlan = (date: string): DailyPlanData => ({
   date,
   topPriorities: ['', '', ''],
+  topPriorityDone: [false, false, false],
   tasks: [],
   gratitude: '',
+  affirmation: '',
   reflection: '',
   mood: 3,
 });
@@ -38,6 +40,12 @@ export default function DailyPlan() {
     const priorities = [...plan.topPriorities];
     priorities[idx] = value;
     save({ ...plan, topPriorities: priorities });
+  }
+
+  function togglePriorityDone(idx: number) {
+    const done = [...(plan.topPriorityDone ?? [false, false, false])];
+    done[idx] = !done[idx];
+    save({ ...plan, topPriorityDone: done });
   }
 
   function addTask() {
@@ -125,6 +133,17 @@ export default function DailyPlan() {
         </div>
       )}
 
+      {/* Daily Affirmation */}
+      <div className="card">
+        <h3 className="font-bold text-slate-800 mb-2">오늘의 다짐 / 명언</h3>
+        <input
+          className="input w-full"
+          placeholder="오늘의 다짐이나 명언을 적어보세요..."
+          value={plan.affirmation ?? ''}
+          onChange={(e) => save({ ...plan, affirmation: e.target.value })}
+        />
+      </div>
+
       {/* Mood */}
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-3">Mood</h3>
@@ -158,22 +177,27 @@ export default function DailyPlan() {
         <h3 className="font-bold text-slate-800 mb-3">Top 3 Priorities</h3>
         <p className="text-xs text-slate-400 mb-3">Click the star on a task to auto-fill here.</p>
         <div className="space-y-2">
-          {plan.topPriorities.map((p, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ background: ['#c45c8a', '#f59e0b', '#10b981'][i] }}
-              >
-                {i + 1}
+          {plan.topPriorities.map((p, i) => {
+            const done = (plan.topPriorityDone ?? [false, false, false])[i] ?? false;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <button
+                  onClick={() => togglePriorityDone(i)}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 transition-all ${done ? 'opacity-60' : ''}`}
+                  style={{ background: ['#c45c8a', '#f59e0b', '#10b981'][i] }}
+                  title={done ? '완료 취소' : '완료'}
+                >
+                  {done ? <Check size={14} /> : i + 1}
+                </button>
+                <input
+                  className={`input ${done ? 'line-through text-slate-400' : ''}`}
+                  placeholder={`Priority ${i + 1}...`}
+                  value={p}
+                  onChange={(e) => updatePriority(i, e.target.value)}
+                />
               </div>
-              <input
-                className="input"
-                placeholder={`Priority ${i + 1}...`}
-                value={p}
-                onChange={(e) => updatePriority(i, e.target.value)}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

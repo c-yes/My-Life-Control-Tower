@@ -64,8 +64,10 @@ export interface DailyTask {
 export interface DailyPlanData {
   date: string;
   topPriorities: string[];
+  topPriorityDone: boolean[];
   tasks: DailyTask[];
   gratitude: string;
+  affirmation: string;
   reflection: string;
   mood: number;
 }
