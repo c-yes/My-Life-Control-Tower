@@ -11,15 +11,15 @@ import {
 } from '../../utils/helpers';
 
 const sections = [
-  { path: '/life-compass', emoji: '🧭', title: 'Life Compass', subtitle: '삶의 나침반', color: '#6366f1', bg: '#eef2ff' },
-  { path: '/annual-goals', emoji: '🎯', title: 'Annual Goals', subtitle: '연간 목표', color: '#10b981', bg: '#ecfdf5' },
-  { path: '/monthly-plan', emoji: '📅', title: 'Monthly Plan', subtitle: '월간 계획', color: '#f59e0b', bg: '#fffbeb' },
-  { path: '/weekly-plan', emoji: '📋', title: 'Weekly Plan', subtitle: '주간 계획', color: '#3b82f6', bg: '#eff6ff' },
-  { path: '/daily-plan', emoji: '✅', title: 'Daily Plan', subtitle: '일간 계획', color: '#8b5cf6', bg: '#f5f3ff' },
-  { path: '/time-block', emoji: '⏰', title: 'Time Block', subtitle: '타임블록', color: '#ec4899', bg: '#fdf2f8' },
-  { path: '/miracle21', emoji: '⭐', title: 'Miracle 21', subtitle: 'Miracle21', color: '#f97316', bg: '#fff7ed' },
-  { path: '/mind-map', emoji: '🧠', title: 'Mind Map', subtitle: '마인드맵', color: '#14b8a6', bg: '#f0fdfa' },
-  { path: '/domain-tracker', emoji: '📊', title: 'Domain Tracker', subtitle: '도메인 트래커', color: '#6366f1', bg: '#eef2ff' },
+  { path: '/life-compass', title: 'Life Compass', color: '#6366f1', bg: '#eef2ff' },
+  { path: '/annual-goals', title: 'Annual', color: '#10b981', bg: '#ecfdf5' },
+  { path: '/monthly-plan', title: 'Monthly', color: '#f59e0b', bg: '#fffbeb' },
+  { path: '/weekly-plan', title: 'Weekly', color: '#3b82f6', bg: '#eff6ff' },
+  { path: '/daily-plan', title: 'Daily', color: '#8b5cf6', bg: '#f5f3ff' },
+  { path: '/time-block', title: 'Time Block', color: '#ec4899', bg: '#fdf2f8' },
+  { path: '/miracle21', title: 'Miracle 21', color: '#f97316', bg: '#fff7ed' },
+  { path: '/mind-map', title: 'Mind Map', color: '#14b8a6', bg: '#f0fdfa' },
+  { path: '/domain-tracker', title: 'Domain Tracker', color: '#6366f1', bg: '#eef2ff' },
 ];
 
 export default function Dashboard() {
@@ -69,7 +69,7 @@ export default function Dashboard() {
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Welcome to Your Control Tower 🗼
+              Welcome to Your Control Tower
             </h2>
             <p className="text-slate-500 mt-1">{formatDateDisplay(new Date())} — Manage your life intentionally.</p>
             {lifeCompass.mission && (
@@ -119,7 +119,7 @@ export default function Dashboard() {
 
       {/* Domain Scores */}
       <div className="card">
-        <h3 className="font-bold text-slate-900 mb-4">Life Domains — 삶의 영역 (avg: {avgDomainScore}/10)</h3>
+        <h3 className="font-bold text-slate-900 mb-4">Life Domains (avg: {avgDomainScore}/10)</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {domainScores.map((ds) => {
             const cfg = DOMAIN_CONFIG[ds.domain];
@@ -130,8 +130,7 @@ export default function Dashboard() {
                 style={{ background: `${cfg.color}10` }}
                 onClick={() => navigate('/domain-tracker')}
               >
-                <span className="text-2xl mb-1">{cfg.emoji}</span>
-                <span className="text-xs font-medium text-slate-600">{cfg.labelKo}</span>
+                <span className="text-xs font-medium text-slate-600">{cfg.label}</span>
                 <span className="text-lg font-bold mt-1" style={{ color: cfg.color }}>
                   {ds.score}
                 </span>
@@ -151,7 +150,7 @@ export default function Dashboard() {
       {thisYearGoals.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-slate-900">Annual Goals {year} — 연간 목표</h3>
+            <h3 className="font-bold text-slate-900">Annual {year}</h3>
             <button className="btn-secondary text-xs" onClick={() => navigate('/annual-goals')}>
               View All →
             </button>
@@ -183,7 +182,7 @@ export default function Dashboard() {
 
       {/* Navigation Cards */}
       <div>
-        <h3 className="font-bold text-slate-900 mb-4">Quick Access — 빠른 이동</h3>
+        <h3 className="font-bold text-slate-900 mb-4">Quick Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {sections.map((s) => (
             <button
@@ -192,13 +191,10 @@ export default function Dashboard() {
               onClick={() => navigate(s.path)}
             >
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-3"
+                className="w-10 h-10 rounded-lg mb-3"
                 style={{ background: s.bg }}
-              >
-                {s.emoji}
-              </div>
+              />
               <div className="font-semibold text-slate-800 text-sm">{s.title}</div>
-              <div className="text-xs text-slate-500">{s.subtitle}</div>
             </button>
           ))}
         </div>

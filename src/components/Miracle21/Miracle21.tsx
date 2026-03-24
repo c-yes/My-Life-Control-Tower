@@ -419,7 +419,7 @@ function StepCard({
               return (
                 <div
                   key={dayIdx}
-                  className="rounded-xl overflow-hidden"
+                  className="rounded-xl overflow-hidden flex flex-col"
                   style={{
                     border: isToday
                       ? '2px solid #f97316'
@@ -432,52 +432,53 @@ function StepCard({
                       ? '#1c120a'
                       : '#16162a',
                     opacity: isFuture ? 0.5 : 1,
+                    minHeight: 120,
                   }}
                 >
-                  {/* Day header */}
-                  <div className="px-1.5 pt-1.5 pb-1 text-center">
-                    <div className="text-xs font-semibold" style={{ color: '#94a3b8' }}>
-                      D{dayIdx + 1}
+                  {/* Day header: checkbox + D label + date */}
+                  <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
+                    <div
+                      className="flex-shrink-0 cursor-pointer"
+                      onClick={() => !isFuture && toggleDay(dayIdx)}
+                    >
+                      {dayEntry.completed ? (
+                        <Check size={14} style={{ color: '#f97316' }} />
+                      ) : (
+                        <div
+                          className="w-3.5 h-3.5 rounded border"
+                          style={{ borderColor: '#3f3f5a' }}
+                        />
+                      )}
                     </div>
-                    <div className="text-xs" style={{ color: '#64748b' }}>
-                      {format(new Date(dateStr + 'T12:00:00'), 'MM-dd')}
+                    <div>
+                      <div className="text-xs font-semibold leading-none" style={{ color: '#94a3b8' }}>
+                        D{dayIdx + 1}
+                      </div>
+                      <div className="text-xs leading-none mt-0.5" style={{ color: '#64748b', fontSize: 9 }}>
+                        {format(new Date(dateStr + 'T12:00:00'), 'MM-dd')}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Check area */}
-                  <div
-                    className="flex items-center justify-center py-2 cursor-pointer"
-                    onClick={() => !isFuture && toggleDay(dayIdx)}
-                  >
-                    {dayEntry.completed ? (
-                      <Check size={16} style={{ color: '#f97316' }} />
-                    ) : (
-                      <div
-                        className="w-4 h-4 rounded border"
-                        style={{ borderColor: '#3f3f5a' }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Note area */}
+                  {/* Note area — expandable */}
                   {isEditing ? (
                     <textarea
                       autoFocus
-                      className="w-full bg-transparent text-center resize-none outline-none px-1 pb-1"
-                      style={{ color: '#94a3b8', fontSize: 10, minHeight: 36 }}
+                      className="flex-1 w-full bg-transparent resize-none outline-none px-2 pb-2"
+                      style={{ color: '#94a3b8', fontSize: 11, minHeight: 72 }}
                       value={dayNoteDraft}
                       onChange={(e) => setDayNoteDraft(e.target.value)}
                       onBlur={saveDayNote}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && saveDayNote()}
-                      placeholder="메모..."
+                      placeholder="Note..."
                     />
                   ) : (
                     <div
-                      className="text-center px-1 pb-1.5 cursor-text"
-                      style={{ fontSize: 10, color: dayEntry.note ? '#94a3b8' : '#3f3f5a', minHeight: 24 }}
+                      className="flex-1 px-2 pb-2 cursor-text overflow-hidden"
+                      style={{ fontSize: 11, color: dayEntry.note ? '#94a3b8' : '#3f3f5a', minHeight: 72, whiteSpace: 'pre-wrap' }}
                       onClick={() => !isFuture && openDayNote(dayIdx)}
                     >
-                      {dayEntry.note || '·'}
+                      {dayEntry.note || ''}
                     </div>
                   )}
                 </div>

@@ -43,8 +43,7 @@ export default function MindMap() {
     <div className="space-y-6 fade-in">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="section-title">🧠 만다라트 — Mind Map</h2>
-          <p className="section-subtitle">만다라트 형식으로 아이디어를 구조화하세요.</p>
+          <h2 className="section-title">Mind Map</h2>
         </div>
         <button className="btn-primary flex items-center gap-1" onClick={() => setCreating(true)}>
           <Plus size={14} /> 새 만다라트
@@ -111,7 +110,10 @@ export default function MindMap() {
                     background: i === 4 ? '#1e1e2e' : '#2a2a3e',
                     color: i === 4 ? '#f97316' : '#94a3b8',
                     border: i === 4 ? '1px solid #f97316' : '1px solid #3f3f5a',
-                    minHeight: 24,
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   {map.cells[i] || (i === 4 ? map.title : '')}
@@ -215,33 +217,34 @@ function MandalartEditor({ map, onBack }: { map: MindMapData; onBack: () => void
                 style={{
                   background: isCenter ? '#1c1c2e' : '#16162a',
                   border: isCenter ? '2px solid #f97316' : '1px solid #2d2d4a',
-                  minHeight: 120,
+                  aspectRatio: '1 / 1',
                   padding: '12px',
                   transition: 'border-color 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
                 onClick={() => !isEditing && setEditingCell(idx)}
               >
                 {isEditing ? (
                   <textarea
                     autoFocus
-                    className="w-full h-full resize-none bg-transparent outline-none text-sm"
-                    style={{ color: isCenter ? '#f97316' : '#e2e8f0', minHeight: 96 }}
+                    className="flex-1 w-full resize-none bg-transparent outline-none text-sm"
+                    style={{ color: isCenter ? '#f97316' : '#e2e8f0' }}
                     value={cells[idx]}
-                    placeholder={isCenter ? '핵심 주제...' : '생각 입력...'}
+                    placeholder={isCenter ? 'Core topic...' : 'Idea...'}
                     onChange={(e) => saveCell(idx, e.target.value)}
                     onBlur={() => setEditingCell(null)}
                   />
                 ) : (
                   <div
-                    className="text-sm whitespace-pre-wrap"
+                    className="flex-1 text-sm whitespace-pre-wrap overflow-hidden"
                     style={{
                       color: cells[idx]
                         ? isCenter ? '#f97316' : '#e2e8f0'
                         : '#3f3f5a',
-                      minHeight: 96,
                     }}
                   >
-                    {cells[idx] || (isCenter ? '핵심 주제...' : '생각 입력...')}
+                    {cells[idx] || (isCenter ? 'Core topic...' : 'Idea...')}
                   </div>
                 )}
               </div>

@@ -126,7 +126,7 @@ export default function TimeBlock() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="section-title">⏰ Time Block — 타임블록</h2>
+          <h2 className="section-title">Time Block</h2>
           <p className="section-subtitle">{formatDateDisplay(new Date(selectedDate + 'T12:00:00'))}</p>
         </div>
         <div className="flex items-center gap-2">

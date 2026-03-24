@@ -71,7 +71,7 @@ export default function DailyPlan() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="section-title">✅ Daily Plan — 일간 계획</h2>
+          <h2 className="section-title">Daily Plan</h2>
           <p className="section-subtitle">{formatDateDisplay(new Date(selectedDate + 'T12:00:00'))}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function DailyPlan() {
 
       {/* Mood */}
       <div className="card">
-        <h3 className="font-bold text-slate-800 mb-3">Mood — 오늘의 기분</h3>
+        <h3 className="font-bold text-slate-800 mb-3">Mood</h3>
         <div className="flex items-center gap-3">
           {MOOD_EMOJIS.map((emoji, i) => (
             <button
@@ -114,9 +114,7 @@ export default function DailyPlan() {
 
       {/* Top 3 Priorities */}
       <div className="card">
-        <h3 className="font-bold text-slate-800 mb-3">
-          Top 3 Priorities — 오늘의 3가지 우선순위
-        </h3>
+        <h3 className="font-bold text-slate-800 mb-3">Top 3 Priorities</h3>
         <div className="space-y-2">
           {plan.topPriorities.map((p, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -141,7 +139,7 @@ export default function DailyPlan() {
       <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-slate-800">
-            Tasks — 할 일 ({completedCount}/{plan.tasks.length})
+            Tasks ({completedCount}/{plan.tasks.length})
           </h3>
           {plan.tasks.length > 0 && (
             <div className="progress-bar w-24">
@@ -181,7 +179,7 @@ export default function DailyPlan() {
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={{ background: `${cfg.color}20`, color: cfg.color }}
                   >
-                    {cfg.emoji} {cfg.labelKo}
+                    {cfg.label}
                   </span>
                 )}
                 <button
@@ -220,27 +218,14 @@ export default function DailyPlan() {
         </div>
       </div>
 
-      {/* Gratitude */}
+      {/* Self Feedback */}
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-2">
-          Gratitude — 감사한 것들 🙏
-        </h3>
-        <textarea
-          className="textarea h-20"
-          placeholder="What am I grateful for today? (오늘 감사한 것들을 적어보세요)"
-          value={plan.gratitude}
-          onChange={(e) => save({ ...plan, gratitude: e.target.value })}
-        />
-      </div>
-
-      {/* Evening Reflection */}
-      <div className="card">
-        <h3 className="font-bold text-slate-800 mb-2">
-          Evening Reflection — 저녁 회고 🌙
+          Self Feedback
         </h3>
         <textarea
           className="textarea h-28"
-          placeholder="How was today? What did I learn? What would I do differently? (오늘 하루를 돌아보며...)"
+          placeholder="How was today? What did I learn? What would I do differently?"
           value={plan.reflection}
           onChange={(e) => save({ ...plan, reflection: e.target.value })}
         />

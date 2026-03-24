@@ -49,10 +49,8 @@ export default function MonthlyPlan() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="section-title">📅 Monthly Plan — 월간 계획</h2>
-          <p className="section-subtitle">
-            {MONTH_NAMES[month - 1]} {year} — {completedCount}/{goals.length} goals completed
-          </p>
+          <h2 className="section-title">Monthly</h2>
+          <p className="section-subtitle">{MONTH_NAMES[month - 1]} {year} — {completedCount}/{goals.length} goals completed</p>
         </div>
         <div className="flex items-center gap-2">
           <select className="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>

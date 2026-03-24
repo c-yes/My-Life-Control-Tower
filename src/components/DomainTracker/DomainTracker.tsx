@@ -74,8 +74,8 @@ export default function DomainTracker() {
   const weekLabel = (() => {
     const start = weekDates[0];
     const end = weekDates[6];
-    if (weekOffset === 0) return '이번 주';
-    if (weekOffset === -1) return '지난 주';
+    if (weekOffset === 0) return 'This Week';
+    if (weekOffset === -1) return 'Last Week';
     return `${format(start, 'M.d')} — ${format(end, 'M.d')}`;
   })();
 
@@ -83,8 +83,7 @@ export default function DomainTracker() {
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div>
-        <h2 className="section-title">📊 도메인 트래커</h2>
-        <p className="section-subtitle">6가지 도메인별 주간 활동을 기록하세요.</p>
+        <h2 className="section-title">Domain Tracker</h2>
       </div>
 
       {/* Domain filter chips */}
@@ -107,8 +106,7 @@ export default function DomainTracker() {
                 className="w-2 h-2 rounded-full"
                 style={{ background: active ? cfg.color : '#cbd5e1' }}
               />
-              <span className="font-bold">{cfg.label}</span>
-              <span style={{ color: active ? cfg.color : '#94a3b8' }}>{cfg.labelKo}</span>
+              <span className="font-bold text-sm">{cfg.label}</span>
             </button>
           );
         })}
@@ -140,7 +138,7 @@ export default function DomainTracker() {
             className="text-xs text-indigo-500 hover:underline"
             onClick={() => setWeekOffset(0)}
           >
-            이번 주로
+            This Week
           </button>
         )}
       </div>
@@ -150,18 +148,17 @@ export default function DomainTracker() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: '#0f0f1a' }}>
-              <th className="w-14 py-3 px-3 text-left text-slate-400 text-xs font-medium">날짜</th>
+              <th className="w-14 py-3 px-3 text-left text-slate-400 text-xs font-medium">Date</th>
               {shownDomains.map((domain) => {
                 const cfg = DOMAIN_CONFIG[domain];
                 return (
                   <th key={domain} className="py-3 px-3 text-center min-w-36">
                     <div
-                      className="font-bold text-xs tracking-wide"
+                      className="font-bold text-sm tracking-wide"
                       style={{ color: cfg.color, fontFamily: 'monospace' }}
                     >
                       {cfg.label}
                     </div>
-                    <div className="text-slate-500 text-xs font-normal">{cfg.labelKo}</div>
                   </th>
                 );
               })}
@@ -245,7 +242,7 @@ export default function DomainTracker() {
 
       {/* Weekly completion summary */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-600 mb-3">이번 주 완종도</h3>
+        <h3 className="text-sm font-semibold text-slate-600 mb-3">Weekly Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {shownDomains.map((domain) => {
             const cfg = DOMAIN_CONFIG[domain];
@@ -253,25 +250,26 @@ export default function DomainTracker() {
             return (
               <div
                 key={domain}
-                className="rounded-xl p-4 text-center border"
+                className="rounded-xl p-4 border"
                 style={{
                   background: '#0f0f1a',
                   borderColor: `${cfg.color}30`,
                 }}
               >
-                <div
-                  className="text-3xl font-bold mb-1"
-                  style={{ color: cfg.color, fontFamily: 'monospace' }}
-                >
-                  {count}
+                <div className="flex items-center gap-2">
+                  <div
+                    className="text-lg font-bold"
+                    style={{ color: cfg.color, fontFamily: 'monospace' }}
+                  >
+                    {cfg.label}
+                  </div>
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: cfg.color, fontFamily: 'monospace' }}
+                  >
+                    {count}
+                  </div>
                 </div>
-                <div
-                  className="text-xs font-bold tracking-wide"
-                  style={{ color: cfg.color, fontFamily: 'monospace' }}
-                >
-                  {cfg.label}
-                </div>
-                <div className="text-xs text-slate-500 mt-0.5">{cfg.labelKo}</div>
                 {/* Mini progress bar */}
                 <div className="mt-2 h-1 rounded-full bg-slate-800 overflow-hidden">
                   <div

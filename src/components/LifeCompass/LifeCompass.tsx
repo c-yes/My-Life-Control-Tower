@@ -80,8 +80,7 @@ export default function LifeCompass() {
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div>
-        <h2 className="section-title">🧭 Life Compass — 삶의 나침반</h2>
-        <p className="section-subtitle">Define your mission, vision, core values, and life principles.</p>
+        <h2 className="section-title">Life Compass</h2>
       </div>
 
       {/* Mission */}

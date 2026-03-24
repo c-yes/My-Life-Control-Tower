@@ -98,8 +98,7 @@ export default function AnnualGoals() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="section-title">🎯 Annual Goals — 연간 목표</h2>
-          <p className="section-subtitle">OKR-style yearly goals across all life domains.</p>
+          <h2 className="section-title">Annual</h2>
         </div>
         <div className="flex items-center gap-3">
           <select

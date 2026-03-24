@@ -65,10 +65,8 @@ export default function WeeklyPlan() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h2 className="section-title">📋 Weekly Plan — 주간 계획</h2>
-          <p className="section-subtitle">
-            Week {week}, {year} — {weekRange} — {completedCount}/{tasks.length} done
-          </p>
+          <h2 className="section-title">Weekly</h2>
+          <p className="section-subtitle">Week {week}, {year} — {weekRange} — {completedCount}/{tasks.length} done</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select className="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
