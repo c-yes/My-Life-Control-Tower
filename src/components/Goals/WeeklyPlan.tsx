@@ -10,7 +10,7 @@ import {
   DAYS_OF_WEEK,
   formatDateDisplay,
 } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Check, X, ArrowRight, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function WeeklyPlan() {
@@ -19,12 +19,14 @@ export default function WeeklyPlan() {
   const [year, setYear] = useState(getCurrentYear());
   const [week, setWeek] = useState(getCurrentWeek());
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
     domain: 'output' as Domain,
     dayOfWeek: 0,
     monthlyGoalId: '',
   });
+  const [editForm, setEditForm] = useState({ title: '' });
 
   const tasks = weeklyTasks.filter((t) => t.year === year && t.week === week);
   const completedCount = tasks.filter((t) => t.completed).length;
@@ -46,6 +48,17 @@ export default function WeeklyPlan() {
     });
     setForm({ title: '', domain: 'output', dayOfWeek: 0, monthlyGoalId: '' });
     setShowAddForm(false);
+  }
+
+  function startEdit(task: typeof tasks[0]) {
+    setEditingId(task.id);
+    setEditForm({ title: task.title });
+  }
+
+  function saveEdit() {
+    if (!editingId || !editForm.title.trim()) return;
+    updateWeeklyTask(editingId, { title: editForm.title.trim() });
+    setEditingId(null);
   }
 
   const relevantMonthlyGoals = monthlyGoals.filter((g) => g.year === year);
@@ -89,7 +102,7 @@ export default function WeeklyPlan() {
           <div className="progress-bar h-3">
             <div
               className="progress-fill h-3"
-              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
+              style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
             />
           </div>
           <div className="text-xs text-slate-400 mt-1">{completedCount} of {tasks.length} tasks completed</div>
@@ -176,7 +189,7 @@ export default function WeeklyPlan() {
           </div>
 
           {/* 7-column grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
             {DAYS_OF_WEEK.map((day, dayIdx) => {
               const dayTasks = tasks.filter((t) => t.dayOfWeek === dayIdx);
               const dayDate = weekDays[dayIdx];
@@ -207,7 +220,7 @@ export default function WeeklyPlan() {
                       return (
                         <div
                           key={task.id}
-                          className="group flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-white"
+                          className="group flex items-start gap-1.5 p-1.5 rounded-lg hover:bg-slate-50"
                         >
                           <input
                             type="checkbox"
@@ -217,26 +230,54 @@ export default function WeeklyPlan() {
                             style={{ accentColor: cfg.color }}
                           />
                           <div className="flex-1 min-w-0">
-                            <div
-                              className={`text-xs leading-tight ${
-                                task.completed ? 'line-through text-slate-400' : 'text-slate-700'
-                              }`}
-                            >
-                              {task.title}
-                            </div>
-                            <span
-                              className="inline-block mt-0.5 text-xs px-1 rounded"
-                              style={{ background: `${cfg.color}20`, color: cfg.color }}
-                            >
-                              {cfg.label}
-                            </span>
+                            {editingId === task.id ? (
+                              <div className="space-y-1">
+                                <input
+                                  autoFocus
+                                  className="w-full text-xs border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-pink-400"
+                                  value={editForm.title}
+                                  onChange={(e) => setEditForm({ title: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEdit();
+                                    if (e.key === 'Escape') setEditingId(null);
+                                  }}
+                                  onBlur={saveEdit}
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <div
+                                  className={`text-xs leading-tight ${
+                                    task.completed ? 'line-through text-slate-400' : 'text-slate-700'
+                                  }`}
+                                >
+                                  {task.title}
+                                </div>
+                                <span
+                                  className="inline-block mt-0.5 text-xs px-1 rounded"
+                                  style={{ background: `${cfg.color}20`, color: cfg.color }}
+                                >
+                                  {cfg.label}
+                                </span>
+                              </>
+                            )}
                           </div>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                            onClick={() => deleteWeeklyTask(task.id)}
-                          >
-                            <X size={10} />
-                          </button>
+                          {editingId !== task.id && (
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
+                              onMouseDown={(e) => { e.preventDefault(); startEdit(task); }}
+                            >
+                              <Edit2 size={9} />
+                            </button>
+                          )}
+                          {editingId !== task.id && (
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
+                              onClick={() => deleteWeeklyTask(task.id)}
+                            >
+                              <X size={10} />
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -260,7 +301,7 @@ export default function WeeklyPlan() {
       {/* Link to Daily */}
       {tasks.length > 0 && (
         <div className="card bg-pink-50 border-pink-100">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h4 className="font-semibold text-pink-800">Plan your day</h4>
               <p className="text-sm text-pink-600 mt-0.5">Break down today's tasks in the daily plan.</p>

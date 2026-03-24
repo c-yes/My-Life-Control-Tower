@@ -118,7 +118,7 @@ export default function DailyPlan() {
           <div className="progress-bar h-3">
             <div
               className="progress-fill h-3"
-              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
+              style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
             />
           </div>
           <div className="text-xs text-slate-400 mt-1">{completedCount} of {plan.tasks.length} tasks completed</div>
@@ -162,7 +162,7 @@ export default function DailyPlan() {
             <div key={i} className="flex items-center gap-3">
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ background: ['#ec4899', '#f59e0b', '#10b981'][i] }}
+                style={{ background: ['#c45c8a', '#f59e0b', '#10b981'][i] }}
               >
                 {i + 1}
               </div>
@@ -195,7 +195,7 @@ export default function DailyPlan() {
                 className="progress-fill"
                 style={{
                   width: `${achievementPct}%`,
-                  background: '#ec4899',
+                  background: '#c45c8a',
                 }}
               />
             </div>

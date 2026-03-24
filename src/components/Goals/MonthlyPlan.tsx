@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId, getCurrentYear, getCurrentMonth, MONTH_NAMES } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Check, X, ArrowRight, ExternalLink, Edit2 } from 'lucide-react';
 
 export default function MonthlyPlan() {
   const navigate = useNavigate();
@@ -11,7 +11,13 @@ export default function MonthlyPlan() {
   const [year, setYear] = useState(getCurrentYear());
   const [month, setMonth] = useState(getCurrentMonth());
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
+    title: '',
+    domain: 'output' as Domain,
+    annualGoalId: '',
+  });
+  const [editForm, setEditForm] = useState({
     title: '',
     domain: 'output' as Domain,
     annualGoalId: '',
@@ -36,6 +42,21 @@ export default function MonthlyPlan() {
     });
     setForm({ title: '', domain: 'output', annualGoalId: '' });
     setShowAddForm(false);
+  }
+
+  function startEdit(goal: typeof goals[0]) {
+    setEditingId(goal.id);
+    setEditForm({ title: goal.title, domain: goal.domain, annualGoalId: goal.annualGoalId || '' });
+  }
+
+  function saveEdit() {
+    if (!editingId) return;
+    updateMonthlyGoal(editingId, {
+      title: editForm.title.trim(),
+      domain: editForm.domain,
+      annualGoalId: editForm.annualGoalId || undefined,
+    });
+    setEditingId(null);
   }
 
   const groupedGoals = domains.reduce((acc, domain) => {
@@ -74,7 +95,7 @@ export default function MonthlyPlan() {
           <div className="progress-bar h-3">
             <div
               className="progress-fill h-3"
-              style={{ width: `${achievementPct}%`, background: '#ec4899' }}
+              style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
             />
           </div>
           <div className="text-xs text-slate-400 mt-1">{completedCount} of {goals.length} goals completed</div>
@@ -167,6 +188,48 @@ export default function MonthlyPlan() {
                 const linkedAnnual = goal.annualGoalId
                   ? annualGoals.find((ag) => ag.id === goal.annualGoalId)
                   : null;
+
+                if (editingId === goal.id) {
+                  return (
+                    <div key={goal.id} className="p-3 rounded-lg border border-pink-200 bg-pink-50 space-y-2">
+                      <input
+                        className="input"
+                        value={editForm.title}
+                        autoFocus
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                      />
+                      <select
+                        className="select w-full"
+                        value={editForm.domain}
+                        onChange={(e) => setEditForm({ ...editForm, domain: e.target.value as Domain })}
+                      >
+                        {domains.map((d) => (
+                          <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                        ))}
+                      </select>
+                      <select
+                        className="select w-full"
+                        value={editForm.annualGoalId}
+                        onChange={(e) => setEditForm({ ...editForm, annualGoalId: e.target.value })}
+                      >
+                        <option value="">No linked annual goal</option>
+                        {yearAnnualGoals.map((ag) => (
+                          <option key={ag.id} value={ag.id}>{ag.title}</option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button className="btn-primary flex items-center gap-1 text-xs" onClick={saveEdit}>
+                          <Check size={12} /> Save
+                        </button>
+                        <button className="btn-secondary flex items-center gap-1 text-xs" onClick={() => setEditingId(null)}>
+                          <X size={12} /> Cancel
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={goal.id}
@@ -199,6 +262,12 @@ export default function MonthlyPlan() {
                       )}
                     </div>
                     <button
+                      className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
+                      onClick={() => startEdit(goal)}
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
                       className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
                       onClick={() => deleteMonthlyGoal(goal.id)}
                     >
@@ -220,7 +289,7 @@ export default function MonthlyPlan() {
             <div className="flex-1 h-px bg-slate-200" />
           </div>
           <div className="card bg-pink-50 border-pink-100">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h4 className="font-semibold text-pink-800">Ready to plan your week?</h4>
                 <p className="text-sm text-pink-600 mt-0.5">Break down monthly goals into weekly tasks.</p>

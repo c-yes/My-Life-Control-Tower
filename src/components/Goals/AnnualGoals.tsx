@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId, getCurrentYear } from '../../utils/helpers';
-import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, ArrowRight, Target } from 'lucide-react';
 
 export default function AnnualGoals() {
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ export default function AnnualGoals() {
           <div className="progress-bar h-3">
             <div
               className="progress-fill h-3"
-              style={{ width: `${avgProgress}%`, background: '#ec4899' }}
+              style={{ width: `${avgProgress}%`, background: '#c45c8a' }}
             />
           </div>
           <div className="text-xs text-slate-400 mt-1">{goals.length} goals · avg progress</div>
@@ -190,6 +190,30 @@ export default function AnnualGoals() {
         <div className="card text-center py-12">
           <p className="text-slate-400 text-sm">No goals for {year}. Click "Add Goal" to start!</p>
         </div>
+      )}
+
+      {/* Section: Plan */}
+      {goals.length > 0 && (
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Plan</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+          <div className="card bg-pink-50 border-pink-100">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h4 className="font-semibold text-pink-800">Ready to plan your month?</h4>
+                <p className="text-sm text-pink-600 mt-0.5">Break down annual goals into monthly plans.</p>
+              </div>
+              <button
+                className="btn-primary flex items-center gap-1"
+                onClick={() => navigate('/monthly-plan')}
+              >
+                Monthly Plan <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Section: Goals */}
