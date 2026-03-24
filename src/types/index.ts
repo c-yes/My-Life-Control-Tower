@@ -1,12 +1,12 @@
 export type Domain = 'output' | 'input' | 'system' | 'relation' | 'monetization' | 'care';
 
 export const DOMAIN_CONFIG: Record<Domain, { label: string; labelKo: string; color: string; emoji: string }> = {
-  output:       { label: 'Output',       labelKo: '만들기', color: '#f97316', emoji: '⚡' },
-  input:        { label: 'Input',        labelKo: '배우기', color: '#84cc16', emoji: '📚' },
-  system:       { label: 'System',       labelKo: '유지하기', color: '#22c55e', emoji: '⚙️' },
-  relation:     { label: 'Relation',     labelKo: '연결하기', color: '#a855f7', emoji: '🤝' },
-  monetization: { label: 'Monetization', labelKo: '벌기',   color: '#ef4444', emoji: '💰' },
-  care:         { label: 'Care',         labelKo: '돌보기', color: '#fbbf24', emoji: '💛' },
+  output:       { label: 'Output',       labelKo: '만들기', color: '#F5B7B1', emoji: '⚡' },
+  input:        { label: 'Input',        labelKo: '배우기', color: '#7D3C98', emoji: '📚' },
+  system:       { label: 'System',       labelKo: '유지하기', color: '#6C7A89', emoji: '⚙️' },
+  relation:     { label: 'Relation',     labelKo: '연결하기', color: '#FF7A5A', emoji: '🤝' },
+  monetization: { label: 'Monetization', labelKo: '벌기',   color: '#F4D03F', emoji: '💰' },
+  care:         { label: 'Care',         labelKo: '돌보기', color: '#7DCEA0', emoji: '💛' },
 };
 
 export interface CoreValue {
