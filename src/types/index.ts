@@ -1,4 +1,4 @@
-export type Domain = 'output' | 'input' | 'system' | 'relation' | 'monetization' | 'care' | 'maintenance';
+export type Domain = 'output' | 'input' | 'system' | 'relation' | 'monetization' | 'care';
 
 export const DOMAIN_CONFIG: Record<Domain, { label: string; labelKo: string; color: string; emoji: string }> = {
   output:       { label: 'Output',       labelKo: '만들기',  color: '#f472b6', emoji: '⚡' },
@@ -7,7 +7,6 @@ export const DOMAIN_CONFIG: Record<Domain, { label: string; labelKo: string; col
   relation:     { label: 'Relation',     labelKo: '연결하기', color: '#FF7A5A', emoji: '🤝' },
   monetization: { label: 'Monetization', labelKo: '벌기',    color: '#D4AC0D', emoji: '💰' },
   care:         { label: 'Care',         labelKo: '돌보기',  color: '#52A97E', emoji: '💛' },
-  maintenance:  { label: 'Maintenance',  labelKo: '관리하기', color: '#2C2C2C', emoji: '🔧' },
 };
 
 export interface CoreValue {
