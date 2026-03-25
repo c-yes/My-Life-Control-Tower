@@ -7,7 +7,7 @@ export const DOMAIN_CONFIG: Record<Domain, { label: string; labelKo: string; col
   relation:     { label: 'Relation',     labelKo: '연결하기', color: '#FF7A5A', emoji: '🤝' },
   monetization: { label: 'Monetization', labelKo: '벌기',    color: '#F4D03F', emoji: '💰' },
   care:         { label: 'Care',         labelKo: '돌보기',  color: '#7DCEA0', emoji: '💛' },
-  maintenance:  { label: 'Maintenance',  labelKo: '관리하기', color: '#909090', emoji: '🔧' },
+  maintenance:  { label: 'Maintenance',  labelKo: '관리하기', color: '#2C2C2C', emoji: '🔧' },
 };
 
 export interface CoreValue {
