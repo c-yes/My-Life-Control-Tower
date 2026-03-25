@@ -172,31 +172,3 @@ export interface Habit {
   color: string;
   icon: string;
 }
-
-// ── Prenatal Music Workflow ───────────────────────────────────────────────────
-
-export type PrenatalStage =
-  | 'planning'
-  | 'prompt_writing'
-  | 'music_production'
-  | 'cover_image'
-  | 'video_editing'
-  | 'thumbnail'
-  | 'description_tags'
-  | 'scheduled'
-  | 'done';
-
-export interface PrenatalVideo {
-  id: string;
-  title: string;
-  stage: PrenatalStage;
-  uploadDate: string;       // YYYY-MM-DD
-  referenceUrl: string;     // 참고 곡 URL
-  conceptMemo: string;
-  sunoStylePrompt: string;
-  sunoLyricsPrompt: string;
-  sunoSongUrl: string;
-  coverImageUrl: string;
-  youtubeUrl: string;
-  createdAt: string;
-}
