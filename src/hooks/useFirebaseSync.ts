@@ -38,6 +38,7 @@ export function useFirebaseSync(user: User | null) {
       if (data.mindMaps) useStore.setState({ mindMaps: data.mindMaps });
       if (data.domainEntries) useStore.setState({ domainEntries: data.domainEntries });
       if (data.domainScores) useStore.setState({ domainScores: data.domainScores });
+      if (data.prenatalVideos) useStore.setState({ prenatalVideos: data.prenatalVideos });
 
       isRemoteUpdate.current = false;
     });
@@ -68,6 +69,7 @@ export function useFirebaseSync(user: User | null) {
         mindMaps: s.mindMaps,
         domainEntries: s.domainEntries,
         domainScores: s.domainScores,
+        prenatalVideos: s.prenatalVideos,
       }, { merge: true });
     }, 1000);
 
@@ -86,5 +88,6 @@ export function useFirebaseSync(user: User | null) {
     store.mindMaps,
     store.domainEntries,
     store.domainScores,
+    store.prenatalVideos,
   ]);
 }

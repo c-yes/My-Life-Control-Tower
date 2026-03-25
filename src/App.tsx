@@ -13,6 +13,7 @@ import Miracle21 from './components/Miracle21/Miracle21';
 import MindMap from './components/MindMap/MindMap';
 import DomainTracker from './components/DomainTracker/DomainTracker';
 import WannabeList from './components/WannabeList/WannabeList';
+import PrenatalMusic from './components/PrenatalMusic/PrenatalMusic';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 
@@ -130,6 +131,7 @@ function AppInner() {
               <Route path="/mind-map" element={<MindMap />} />
               <Route path="/domain-tracker" element={<DomainTracker />} />
               <Route path="/wannabe-list" element={<WannabeList />} />
+              <Route path="/prenatal-music" element={<PrenatalMusic />} />
             </Routes>
           </div>
         </main>

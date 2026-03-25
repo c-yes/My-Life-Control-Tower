@@ -16,6 +16,7 @@ import {
   Miracle21Habit,
   WannabeItem,
   Domain,
+  PrenatalVideo,
 } from '../types';
 
 interface AppState {
@@ -99,6 +100,16 @@ interface AppState {
   // Time Block Memos: key = "${date}__${hour}"
   timeBlockMemos: Record<string, string>;
   setTimeBlockMemo: (date: string, hour: number, memo: string) => void;
+
+  // Prenatal Music Workflow
+  prenatalVideos: PrenatalVideo[];
+  addPrenatalVideo: (video: PrenatalVideo) => void;
+  updatePrenatalVideo: (id: string, updates: Partial<PrenatalVideo>) => void;
+  deletePrenatalVideo: (id: string) => void;
+
+  // Anthropic API Key
+  anthropicApiKey: string;
+  setAnthropicApiKey: (key: string) => void;
 }
 
 const defaultLifeCompass: LifeCompassData = {
@@ -285,6 +296,21 @@ export const useStore = create<AppState>()(
         })),
       deleteWannabeItem: (id) =>
         set((state) => ({ wannabeItems: state.wannabeItems.filter((i) => i.id !== id) })),
+
+      // Prenatal Music Workflow
+      prenatalVideos: [],
+      addPrenatalVideo: (video) =>
+        set((state) => ({ prenatalVideos: [...state.prenatalVideos, video] })),
+      updatePrenatalVideo: (id, updates) =>
+        set((state) => ({
+          prenatalVideos: state.prenatalVideos.map((v) => (v.id === id ? { ...v, ...updates } : v)),
+        })),
+      deletePrenatalVideo: (id) =>
+        set((state) => ({ prenatalVideos: state.prenatalVideos.filter((v) => v.id !== id) })),
+
+      // Anthropic API Key (stored locally)
+      anthropicApiKey: '',
+      setAnthropicApiKey: (key) => set({ anthropicApiKey: key }),
 
       // Time Block Memos
       timeBlockMemos: {},
