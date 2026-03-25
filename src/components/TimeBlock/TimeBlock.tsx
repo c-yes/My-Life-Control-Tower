@@ -214,16 +214,16 @@ export default function TimeBlock() {
               const cfg = block.domain ? DOMAIN_CONFIG[block.domain] : null;
               const top = blockTop(block);
               const height = blockHeight(block);
-              const bgColor = cfg ? cfg.color : block.color;
-              const textColor = getTextColor(bgColor);
+              const borderColor = cfg ? cfg.color : block.color;
               return (
                 <div
                   key={block.id}
-                  className={`absolute left-16 rounded-lg px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity shadow-sm ${showMemos ? 'right-48' : 'right-4'}`}
+                  className={`absolute left-16 rounded-lg px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity ${showMemos ? 'right-48' : 'right-4'}`}
                   style={{
                     top,
                     height: Math.max(height, 28),
-                    background: bgColor,
+                    background: 'white',
+                    border: `2px solid ${borderColor}`,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -232,17 +232,17 @@ export default function TimeBlock() {
                 >
                   <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-xs truncate" style={{ color: textColor }}>{block.title}</div>
+                      <div className="font-semibold text-xs truncate" style={{ color: borderColor }}>{block.title}</div>
                       {height >= 36 && (
-                        <div className="text-xs" style={{ color: textColor, opacity: 0.8 }}>
+                        <div className="text-xs text-slate-500">
                           {formatTime(block.startHour, block.startMinute)} – {formatTime(block.endHour, block.endMinute)}
                           {cfg && ` · ${cfg.label}`}
                         </div>
                       )}
                     </div>
                     <button
-                      className="opacity-60 hover:opacity-100 flex-shrink-0"
-                      style={{ color: textColor }}
+                      className="opacity-50 hover:opacity-100 flex-shrink-0"
+                      style={{ color: borderColor }}
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteTimeBlock(block.id);
