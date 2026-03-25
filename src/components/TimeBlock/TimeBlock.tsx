@@ -152,10 +152,10 @@ export default function TimeBlock() {
             className="btn-secondary text-sm"
             onClick={() => setShowMemos((v) => !v)}
           >
-            {showMemos ? '메모 숨기기' : '메모 보기'}
+            {showMemos ? '메모 숨기기' : '메모'}
           </button>
           <button className="btn-primary flex items-center gap-1" onClick={() => openAddForm()}>
-            <Plus size={14} /> Add Block
+            <Plus size={14} /> Block
           </button>
         </div>
       </div>
