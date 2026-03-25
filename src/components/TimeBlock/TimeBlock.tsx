@@ -4,6 +4,16 @@ import { Domain, DOMAIN_CONFIG, TimeBlockData } from '../../types';
 import { generateId, getTodayString, formatDateDisplay } from '../../utils/helpers';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 
+function getTextColor(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  // relative luminance (WCAG)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? '#1e293b' : '#ffffff';
+}
+
 const START_HOUR = 5;
 const END_HOUR = 23;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
@@ -204,6 +214,8 @@ export default function TimeBlock() {
               const cfg = block.domain ? DOMAIN_CONFIG[block.domain] : null;
               const top = blockTop(block);
               const height = blockHeight(block);
+              const bgColor = cfg ? cfg.color : block.color;
+              const textColor = getTextColor(bgColor);
               return (
                 <div
                   key={block.id}
@@ -211,8 +223,7 @@ export default function TimeBlock() {
                   style={{
                     top,
                     height: Math.max(height, 28),
-                    background: cfg ? cfg.color : block.color,
-                    opacity: 0.92,
+                    background: bgColor,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -221,16 +232,17 @@ export default function TimeBlock() {
                 >
                   <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
-                      <div className="text-white font-semibold text-xs truncate">{block.title}</div>
+                      <div className="font-semibold text-xs truncate" style={{ color: textColor }}>{block.title}</div>
                       {height >= 36 && (
-                        <div className="text-white text-xs opacity-80">
+                        <div className="text-xs" style={{ color: textColor, opacity: 0.8 }}>
                           {formatTime(block.startHour, block.startMinute)} – {formatTime(block.endHour, block.endMinute)}
                           {cfg && ` · ${cfg.label}`}
                         </div>
                       )}
                     </div>
                     <button
-                      className="text-white opacity-60 hover:opacity-100 flex-shrink-0"
+                      className="opacity-60 hover:opacity-100 flex-shrink-0"
+                      style={{ color: textColor }}
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteTimeBlock(block.id);
