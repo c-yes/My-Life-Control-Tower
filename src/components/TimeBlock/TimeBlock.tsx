@@ -41,7 +41,7 @@ const defaultForm: BlockForm = {
 };
 
 export default function TimeBlock() {
-  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock } = useStore();
+  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, timeBlockMemos, setTimeBlockMemo } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -173,6 +173,18 @@ export default function TimeBlock() {
                     style={{ height: SLOT_HEIGHT }}
                     onClick={() => openAddForm(hour)}
                   />
+                  <div
+                    className="w-44 flex-shrink-0 border-t border-l border-slate-100 flex items-center px-2"
+                    style={{ height: SLOT_HEIGHT }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      className="w-full text-xs bg-transparent outline-none text-slate-600 placeholder:text-slate-300"
+                      placeholder="메모..."
+                      value={timeBlockMemos[`${selectedDate}__${hour}`] ?? ''}
+                      onChange={(e) => setTimeBlockMemo(selectedDate, hour, e.target.value)}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -185,7 +197,7 @@ export default function TimeBlock() {
               return (
                 <div
                   key={block.id}
-                  className="absolute left-16 right-4 rounded-lg px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+                  className="absolute left-16 right-48 rounded-lg px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
                   style={{
                     top,
                     height: Math.max(height, 28),

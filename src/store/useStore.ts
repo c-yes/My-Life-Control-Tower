@@ -95,6 +95,10 @@ interface AppState {
   addWannabeItem: (item: WannabeItem) => void;
   updateWannabeItem: (id: string, updates: Partial<WannabeItem>) => void;
   deleteWannabeItem: (id: string) => void;
+
+  // Time Block Memos: key = "${date}__${hour}"
+  timeBlockMemos: Record<string, string>;
+  setTimeBlockMemo: (date: string, hour: number, memo: string) => void;
 }
 
 const defaultLifeCompass: LifeCompassData = {
@@ -281,6 +285,13 @@ export const useStore = create<AppState>()(
         })),
       deleteWannabeItem: (id) =>
         set((state) => ({ wannabeItems: state.wannabeItems.filter((i) => i.id !== id) })),
+
+      // Time Block Memos
+      timeBlockMemos: {},
+      setTimeBlockMemo: (date, hour, memo) =>
+        set((state) => ({
+          timeBlockMemos: { ...state.timeBlockMemos, [`${date}__${hour}`]: memo },
+        })),
     }),
     {
       name: 'life-control-tower-storage',
