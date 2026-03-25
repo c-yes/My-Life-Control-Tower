@@ -4,7 +4,7 @@ import { Domain, DOMAIN_CONFIG, TimeBlockData } from '../../types';
 import { generateId, getTodayString, formatDateDisplay } from '../../utils/helpers';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 
-const START_HOUR = 6;
+const START_HOUR = 5;
 const END_HOUR = 23;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const SLOT_HEIGHT = 56; // px per hour
