@@ -42,9 +42,7 @@ export default function MindMap() {
   return (
     <div className="space-y-6 fade-in">
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="section-title">Mind Map</h2>
-        </div>
+        <div />
         <button className="btn-primary flex items-center gap-1" onClick={() => setCreating(true)}>
           <Plus size={14} /> 새 만다라트
         </button>

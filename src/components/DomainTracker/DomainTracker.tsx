@@ -81,11 +81,6 @@ export default function DomainTracker() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Header */}
-      <div>
-        <h2 className="section-title">Domain Tracker</h2>
-      </div>
-
       {/* Domain filter chips */}
       <div className="flex flex-wrap gap-2">
         {DOMAINS.map((domain) => {

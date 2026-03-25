@@ -125,10 +125,7 @@ export default function TimeBlock() {
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="section-title">Time Block</h2>
-          <p className="section-subtitle">{formatDateDisplay(new Date(selectedDate + 'T12:00:00'))}</p>
-        </div>
+        <div />
         <div className="flex items-center gap-2">
           <input
             type="date"
