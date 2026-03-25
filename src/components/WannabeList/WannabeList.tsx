@@ -55,8 +55,7 @@ export default function WannabeList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Wannabe List</h2>
-          {total > 0 && (
+{total > 0 && (
             <p className="text-sm text-slate-400 mt-0.5">{done}/{total} 달성</p>
           )}
         </div>
