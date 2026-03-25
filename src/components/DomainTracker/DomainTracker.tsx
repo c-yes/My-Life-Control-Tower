@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import { Domain, DOMAIN_CONFIG } from '../../types';
+import { Domain, DOMAIN_CONFIG, TRACKER_DOMAINS } from '../../types';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DOMAINS = Object.keys(DOMAIN_CONFIG) as Domain[];
+const DOMAINS = TRACKER_DOMAINS;
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 function getWeekDates(base: Date): Date[] {
