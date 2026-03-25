@@ -41,7 +41,7 @@ const defaultForm: BlockForm = {
 };
 
 export default function TimeBlock() {
-  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, timeBlockMemos, setTimeBlockMemo } = useStore();
+  const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, timeBlockMemos, setTimeBlockMemo, dailyPlans } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -50,6 +50,7 @@ export default function TimeBlock() {
 
   const blocks = timeBlocks.filter((b) => b.date === selectedDate);
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
+  const dailyTasks = dailyPlans.find((p) => p.date === selectedDate)?.tasks ?? [];
   const minutes = [0, 15, 30, 45];
 
   function openAddForm(hour?: number) {
@@ -243,10 +244,18 @@ export default function TimeBlock() {
                 {editingId ? 'Edit Block' : 'New Block'}
               </h3>
               <div className="space-y-3">
+                {dailyTasks.length > 0 && (
+                  <datalist id="daily-tasks-list">
+                    {dailyTasks.map((t) => (
+                      <option key={t.id} value={t.title} />
+                    ))}
+                  </datalist>
+                )}
                 <input
                   className="input"
                   placeholder="Block title..."
                   value={form.title}
+                  list={dailyTasks.length > 0 ? 'daily-tasks-list' : undefined}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   autoFocus
                 />
