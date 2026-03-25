@@ -4,7 +4,9 @@ import {
   LifeCompassData,
   AnnualGoal,
   MonthlyGoal,
+  MonthlyPlanItem,
   WeeklyTask,
+  WeeklyPlanItem,
   DailyPlanData,
   TimeBlockData,
   Habit,
@@ -12,6 +14,7 @@ import {
   DomainScore,
   DomainEntry,
   Miracle21Habit,
+  WannabeItem,
   Domain,
 } from '../types';
 
@@ -32,11 +35,23 @@ interface AppState {
   updateMonthlyGoal: (id: string, updates: Partial<MonthlyGoal>) => void;
   deleteMonthlyGoal: (id: string) => void;
 
+  // Monthly Plan Items
+  monthlyPlanItems: MonthlyPlanItem[];
+  addMonthlyPlanItem: (item: MonthlyPlanItem) => void;
+  updateMonthlyPlanItem: (id: string, updates: Partial<MonthlyPlanItem>) => void;
+  deleteMonthlyPlanItem: (id: string) => void;
+
   // Weekly Tasks
   weeklyTasks: WeeklyTask[];
   addWeeklyTask: (task: WeeklyTask) => void;
   updateWeeklyTask: (id: string, updates: Partial<WeeklyTask>) => void;
   deleteWeeklyTask: (id: string) => void;
+
+  // Weekly Plan Items (goals written in Weekly Goals section)
+  weeklyPlanItems: WeeklyPlanItem[];
+  addWeeklyPlanItem: (item: WeeklyPlanItem) => void;
+  updateWeeklyPlanItem: (id: string, updates: Partial<WeeklyPlanItem>) => void;
+  deleteWeeklyPlanItem: (id: string) => void;
 
   // Daily Plans
   dailyPlans: DailyPlanData[];
@@ -74,6 +89,12 @@ interface AppState {
   // Domain Scores (kept for Dashboard avg score)
   domainScores: DomainScore[];
   updateDomainScore: (domain: Domain, score: number, notes: string) => void;
+
+  // Wannabe List
+  wannabeItems: WannabeItem[];
+  addWannabeItem: (item: WannabeItem) => void;
+  updateWannabeItem: (id: string, updates: Partial<WannabeItem>) => void;
+  deleteWannabeItem: (id: string) => void;
 }
 
 const defaultLifeCompass: LifeCompassData = {
@@ -122,6 +143,17 @@ export const useStore = create<AppState>()(
       deleteMonthlyGoal: (id) =>
         set((state) => ({ monthlyGoals: state.monthlyGoals.filter((g) => g.id !== id) })),
 
+      // Monthly Plan Items
+      monthlyPlanItems: [],
+      addMonthlyPlanItem: (item) =>
+        set((state) => ({ monthlyPlanItems: [...state.monthlyPlanItems, item] })),
+      updateMonthlyPlanItem: (id, updates) =>
+        set((state) => ({
+          monthlyPlanItems: state.monthlyPlanItems.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })),
+      deleteMonthlyPlanItem: (id) =>
+        set((state) => ({ monthlyPlanItems: state.monthlyPlanItems.filter((i) => i.id !== id) })),
+
       // Weekly Tasks
       weeklyTasks: [],
       addWeeklyTask: (task) =>
@@ -132,6 +164,17 @@ export const useStore = create<AppState>()(
         })),
       deleteWeeklyTask: (id) =>
         set((state) => ({ weeklyTasks: state.weeklyTasks.filter((t) => t.id !== id) })),
+
+      // Weekly Plan Items
+      weeklyPlanItems: [],
+      addWeeklyPlanItem: (item) =>
+        set((state) => ({ weeklyPlanItems: [...state.weeklyPlanItems, item] })),
+      updateWeeklyPlanItem: (id, updates) =>
+        set((state) => ({
+          weeklyPlanItems: state.weeklyPlanItems.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })),
+      deleteWeeklyPlanItem: (id) =>
+        set((state) => ({ weeklyPlanItems: state.weeklyPlanItems.filter((i) => i.id !== id) })),
 
       // Daily Plans
       dailyPlans: [],
@@ -227,6 +270,17 @@ export const useStore = create<AppState>()(
             ds.domain === domain ? { ...ds, score, notes } : ds
           ),
         })),
+
+      // Wannabe Items
+      wannabeItems: [],
+      addWannabeItem: (item) =>
+        set((state) => ({ wannabeItems: [...state.wannabeItems, item] })),
+      updateWannabeItem: (id, updates) =>
+        set((state) => ({
+          wannabeItems: state.wannabeItems.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        })),
+      deleteWannabeItem: (id) =>
+        set((state) => ({ wannabeItems: state.wannabeItems.filter((i) => i.id !== id) })),
     }),
     {
       name: 'life-control-tower-storage',

@@ -52,20 +52,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 fade-in">
-      {/* Welcome */}
+      {/* Date & Affirmation */}
       <div className="card">
-        <div className="flex items-start justify-between">
-          <div className="w-full">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Welcome to Your Control Tower
-            </h2>
-            <p className="text-slate-500 mt-1">{formatDateDisplay(new Date())}</p>
-            {todayPlan?.affirmation && (
-              <blockquote className="mt-3 pl-3 border-l-4 border-pink-400 text-sm text-slate-700 italic">
-                {todayPlan.affirmation}
-              </blockquote>
-            )}
-          </div>
+        <div className="w-full">
+          <p className="text-slate-500">{formatDateDisplay(new Date())}</p>
+          {todayPlan?.affirmation && (
+            <blockquote className="mt-3 pl-3 border-l-4 border-pink-400 text-sm text-slate-700">
+              {todayPlan.affirmation}
+            </blockquote>
+          )}
         </div>
       </div>
 

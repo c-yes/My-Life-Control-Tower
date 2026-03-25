@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
-import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, Star } from 'lucide-react';
+import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS, getCurrentYear, getCurrentWeek } from '../../utils/helpers';
+import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2 } from 'lucide-react';
 
 const emptyPlan = (date: string): DailyPlanData => ({
   date,
@@ -18,10 +18,12 @@ const emptyPlan = (date: string): DailyPlanData => ({
 
 export default function DailyPlan() {
   const navigate = useNavigate();
-  const { dailyPlans, upsertDailyPlan } = useStore();
+  const { dailyPlans, upsertDailyPlan, weeklyPlanItems } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDomain, setNewTaskDomain] = useState<Domain>('output');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState('');
 
   const existing = dailyPlans.find((p) => p.date === selectedDate);
   const [plan, setPlan] = useState<DailyPlanData>(existing ?? emptyPlan(selectedDate));
@@ -30,6 +32,11 @@ export default function DailyPlan() {
     const found = dailyPlans.find((p) => p.date === selectedDate);
     setPlan(found ?? emptyPlan(selectedDate));
   }, [selectedDate, dailyPlans]);
+
+  // Get current week's plan items for reference
+  const year = getCurrentYear();
+  const week = getCurrentWeek();
+  const thisWeekPlanItems = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
 
   function save(updated: DailyPlanData) {
     setPlan(updated);
@@ -60,6 +67,16 @@ export default function DailyPlan() {
     setNewTaskTitle('');
   }
 
+  function addTaskFromPlanItem(title: string) {
+    const newTask: DailyTask = {
+      id: generateId(),
+      title,
+      completed: false,
+      domain: 'output',
+    };
+    save({ ...plan, tasks: [...plan.tasks, newTask] });
+  }
+
   function toggleTask(id: string) {
     save({
       ...plan,
@@ -71,21 +88,34 @@ export default function DailyPlan() {
     save({ ...plan, tasks: plan.tasks.filter((t) => t.id !== id) });
   }
 
+  function startEditTask(task: DailyTask) {
+    setEditingTaskId(task.id);
+    setEditTaskTitle(task.title);
+  }
+
+  function saveEditTask() {
+    if (!editingTaskId || !editTaskTitle.trim()) return;
+    save({
+      ...plan,
+      tasks: plan.tasks.map((t) =>
+        t.id === editingTaskId ? { ...t, title: editTaskTitle.trim() } : t
+      ),
+    });
+    setEditingTaskId(null);
+  }
+
   function pinToTop3(title: string) {
     const priorities = [...plan.topPriorities];
-    // If already in top 3, remove it
     const existingIdx = priorities.indexOf(title);
     if (existingIdx !== -1) {
       priorities[existingIdx] = '';
       save({ ...plan, topPriorities: priorities });
       return;
     }
-    // Find next empty slot
     const emptyIdx = priorities.findIndex((p) => !p.trim());
     if (emptyIdx !== -1) {
       priorities[emptyIdx] = title;
     } else {
-      // Replace last slot
       priorities[2] = title;
     }
     save({ ...plan, topPriorities: priorities });
@@ -144,25 +174,37 @@ export default function DailyPlan() {
         />
       </div>
 
-      {/* Mood */}
+      {/* Mood + Memo */}
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-3">Mood</h3>
-        <div className="flex items-center gap-3">
-          {MOOD_EMOJIS.map((emoji, i) => (
-            <button
-              key={i}
-              className={`text-3xl transition-transform hover:scale-110 ${
-                plan.mood === i + 1 ? 'scale-125 drop-shadow-md' : 'opacity-60'
-              }`}
-              onClick={() => save({ ...plan, mood: i + 1 })}
-              title={`Mood ${i + 1}`}
-            >
-              {emoji}
-            </button>
-          ))}
-          <span className="text-sm text-slate-500 ml-2">
-            {['Bad', 'Not great', 'Okay', 'Good', 'Great!'][plan.mood - 1]}
-          </span>
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              {MOOD_EMOJIS.map((emoji, i) => (
+                <button
+                  key={i}
+                  className={`text-3xl transition-transform hover:scale-110 ${
+                    plan.mood === i + 1 ? 'scale-125 drop-shadow-md' : 'opacity-60'
+                  }`}
+                  onClick={() => save({ ...plan, mood: i + 1 })}
+                  title={`Mood ${i + 1}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <span className="text-sm text-slate-500">
+              {['Bad', 'Not great', 'Okay', 'Good', 'Great!'][plan.mood - 1]}
+            </span>
+          </div>
+          <div className="flex-1">
+            <textarea
+              className="textarea h-20 text-sm"
+              placeholder="메모..."
+              value={plan.moodMemo ?? ''}
+              onChange={(e) => save({ ...plan, moodMemo: e.target.value })}
+            />
+          </div>
         </div>
       </div>
 
@@ -207,6 +249,29 @@ export default function DailyPlan() {
         <div className="flex-1 h-px bg-slate-200" />
       </div>
 
+      {/* This week's plan items as reference */}
+      {thisWeekPlanItems.length > 0 && (
+        <div className="card bg-slate-50 border-slate-200">
+          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">이번 주 목표 참고</h4>
+          <div className="space-y-1">
+            {thisWeekPlanItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-2 py-1">
+                <span className={`text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                  {item.title}
+                </span>
+                <button
+                  className="text-xs text-pink-400 hover:text-pink-600 flex items-center gap-1 flex-shrink-0"
+                  onClick={() => addTaskFromPlanItem(item.title)}
+                  title="Task로 추가"
+                >
+                  <Plus size={11} /> 추가
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tasks */}
       <div className="card">
         <div className="flex items-center justify-between mb-3">
@@ -241,19 +306,41 @@ export default function DailyPlan() {
                   type="checkbox"
                   checked={task.completed}
                   onChange={() => toggleTask(task.id)}
-                  className="w-4 h-4 rounded cursor-pointer"
+                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
                   style={cfg ? { accentColor: cfg.color } : {}}
                 />
-                <span className={`flex-1 text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                  {task.title}
-                </span>
-                {cfg && (
+                {editingTaskId === task.id ? (
+                  <input
+                    autoFocus
+                    className="input flex-1 text-sm py-0.5"
+                    value={editTaskTitle}
+                    onChange={(e) => setEditTaskTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEditTask();
+                      if (e.key === 'Escape') setEditingTaskId(null);
+                    }}
+                    onBlur={saveEditTask}
+                  />
+                ) : (
+                  <span className={`flex-1 text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                    {task.title}
+                  </span>
+                )}
+                {cfg && editingTaskId !== task.id && (
                   <span
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={{ background: `${cfg.color}20`, color: cfg.color }}
                   >
                     {cfg.label}
                   </span>
+                )}
+                {editingTaskId !== task.id && (
+                  <button
+                    className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500"
+                    onClick={() => startEditTask(task)}
+                  >
+                    <Edit2 size={13} />
+                  </button>
                 )}
                 <button
                   className={`p-1 rounded transition-colors ${

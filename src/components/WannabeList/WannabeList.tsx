@@ -1,0 +1,212 @@
+import { useState } from 'react';
+import { useStore } from '../../store/useStore';
+import { generateId } from '../../utils/helpers';
+import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
+
+export default function WannabeList() {
+  const { wannabeItems, addWannabeItem, updateWannabeItem, deleteWannabeItem } = useStore();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ title: '', description: '', category: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', category: '' });
+
+  function handleAdd() {
+    if (!form.title.trim()) return;
+    addWannabeItem({
+      id: generateId(),
+      title: form.title.trim(),
+      description: form.description.trim(),
+      category: form.category.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+    });
+    setForm({ title: '', description: '', category: '' });
+    setShowAddForm(false);
+  }
+
+  function startEdit(item: typeof wannabeItems[0]) {
+    setEditingId(item.id);
+    setEditForm({ title: item.title, description: item.description, category: item.category ?? '' });
+  }
+
+  function saveEdit() {
+    if (!editingId || !editForm.title.trim()) return;
+    updateWannabeItem(editingId, {
+      title: editForm.title.trim(),
+      description: editForm.description.trim(),
+      category: editForm.category.trim(),
+    });
+    setEditingId(null);
+  }
+
+  // Group by category
+  const categories = Array.from(new Set(wannabeItems.map((i) => i.category || '기타'))).sort();
+  const uncategorized = wannabeItems.filter((i) => !i.category);
+  const grouped = categories.reduce((acc, cat) => {
+    acc[cat] = wannabeItems.filter((i) => (i.category || '기타') === cat);
+    return acc;
+  }, {} as Record<string, typeof wannabeItems>);
+
+  const total = wannabeItems.length;
+  const done = wannabeItems.filter((i) => i.completed).length;
+
+  return (
+    <div className="space-y-6 fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Wannabe List</h2>
+          {total > 0 && (
+            <p className="text-sm text-slate-400 mt-0.5">{done}/{total} 달성</p>
+          )}
+        </div>
+        <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
+          <Plus size={14} /> Add
+        </button>
+      </div>
+
+      {/* Add Form */}
+      {showAddForm && (
+        <div className="card">
+          <h3 className="font-bold text-slate-800 mb-4">새 Wannabe 추가</h3>
+          <div className="space-y-3">
+            <input
+              className="input"
+              placeholder="하고 싶은 것..."
+              value={form.title}
+              autoFocus
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <input
+              className="input"
+              placeholder="카테고리 (선택)"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            />
+            <textarea
+              className="textarea h-20"
+              placeholder="설명 (선택)"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+            <div className="flex gap-2">
+              <button className="btn-primary flex items-center gap-1" onClick={handleAdd}>
+                <Check size={14} /> Save
+              </button>
+              <button className="btn-secondary flex items-center gap-1" onClick={() => setShowAddForm(false)}>
+                <X size={14} /> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {wannabeItems.length === 0 && !showAddForm && (
+        <div className="card text-center py-16">
+          <div className="text-4xl mb-3">✨</div>
+          <p className="text-slate-400 text-sm">언젠가 하고 싶은 것들을 적어보세요.</p>
+          <button className="btn-primary mt-4" onClick={() => setShowAddForm(true)}>
+            첫 번째 Wannabe 추가
+          </button>
+        </div>
+      )}
+
+      {/* Items by category */}
+      {categories.map((cat) => {
+        const items = grouped[cat];
+        if (!items || items.length === 0) return null;
+        return (
+          <div key={cat}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">
+                {cat}
+              </span>
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-xs text-slate-400">
+                {items.filter((i) => i.completed).length}/{items.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {items.map((item) => {
+                if (editingId === item.id) {
+                  return (
+                    <div key={item.id} className="card border-pink-200 bg-pink-50 space-y-2">
+                      <input
+                        className="input"
+                        value={editForm.title}
+                        autoFocus
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                      />
+                      <input
+                        className="input"
+                        placeholder="카테고리"
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      />
+                      <textarea
+                        className="textarea h-16"
+                        placeholder="설명"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      />
+                      <div className="flex gap-2">
+                        <button className="btn-primary flex items-center gap-1 text-xs" onClick={saveEdit}>
+                          <Check size={12} /> Save
+                        </button>
+                        <button className="btn-secondary flex items-center gap-1 text-xs" onClick={() => setEditingId(null)}>
+                          <X size={12} /> Cancel
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${
+                      item.completed
+                        ? 'bg-slate-50 border-slate-100'
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.completed}
+                      onChange={() => updateWannabeItem(item.id, { completed: !item.completed })}
+                      className="mt-0.5 w-4 h-4 rounded cursor-pointer"
+                      style={{ accentColor: '#ec4899' }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                        {item.title}
+                      </p>
+                      {item.description && (
+                        <p className="text-xs text-slate-500 mt-1">{item.description}</p>
+                      )}
+                    </div>
+                    <button
+                      className="p-1.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
+                      onClick={() => startEdit(item)}
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
+                      onClick={() => deleteWannabeItem(item.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

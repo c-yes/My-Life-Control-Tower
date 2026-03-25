@@ -47,6 +47,7 @@ export interface WeeklyTask {
   title: string;
   domain: Domain;
   dayOfWeek: number;
+  daysOfWeek?: number[]; // multi-day support; overrides dayOfWeek when set
   completed: boolean;
   year: number;
   week: number;
@@ -70,6 +71,7 @@ export interface DailyPlanData {
   affirmation: string;
   reflection: string;
   mood: number;
+  moodMemo?: string;
 }
 
 export interface TimeBlockData {
@@ -126,6 +128,34 @@ export interface DomainScore {
   domain: Domain;
   score: number;
   notes: string;
+}
+
+// Monthly Plan Items (written in Monthly Plan section, visible when creating weekly tasks)
+export interface MonthlyPlanItem {
+  id: string;
+  year: number;
+  month: number;
+  title: string;
+  completed: boolean;
+}
+
+// Weekly Plan Items (written in Weekly Goals section, visible when creating daily tasks)
+export interface WeeklyPlanItem {
+  id: string;
+  year: number;
+  week: number;
+  title: string;
+  completed: boolean;
+}
+
+// Wannabe List items
+export interface WannabeItem {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  createdAt: string;
+  category?: string;
 }
 
 // Legacy habit (kept for backward compatibility)
