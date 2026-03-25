@@ -232,7 +232,7 @@ export default function TimeBlock() {
                 >
                   <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-xs truncate" style={{ color: borderColor }}>{block.title}</div>
+                      <div className="font-semibold text-xs truncate text-slate-700">{block.title}</div>
                       {height >= 36 && (
                         <div className="text-xs text-slate-500">
                           {formatTime(block.startHour, block.startMinute)} – {formatTime(block.endHour, block.endMinute)}
@@ -241,8 +241,7 @@ export default function TimeBlock() {
                       )}
                     </div>
                     <button
-                      className="opacity-50 hover:opacity-100 flex-shrink-0"
-                      style={{ color: borderColor }}
+                      className="opacity-40 hover:opacity-80 flex-shrink-0 text-slate-500"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteTimeBlock(block.id);
