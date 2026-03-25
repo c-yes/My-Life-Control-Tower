@@ -47,6 +47,7 @@ export default function TimeBlock() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BlockForm>(defaultForm);
   const [clickedHour, setClickedHour] = useState<number | null>(null);
+  const [showMemos, setShowMemos] = useState(false);
 
   const blocks = timeBlocks.filter((b) => b.date === selectedDate);
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
@@ -137,6 +138,12 @@ export default function TimeBlock() {
           <button className="btn-secondary text-sm" onClick={() => setSelectedDate(getTodayString())}>
             Today
           </button>
+          <button
+            className="btn-secondary text-sm"
+            onClick={() => setShowMemos((v) => !v)}
+          >
+            {showMemos ? '메모 숨기기' : '메모 보기'}
+          </button>
           <button className="btn-primary flex items-center gap-1" onClick={() => openAddForm()}>
             <Plus size={14} /> Add Block
           </button>
@@ -174,18 +181,20 @@ export default function TimeBlock() {
                     style={{ height: SLOT_HEIGHT }}
                     onClick={() => openAddForm(hour)}
                   />
-                  <div
-                    className="w-44 flex-shrink-0 border-t border-l border-slate-100 flex items-center px-2"
-                    style={{ height: SLOT_HEIGHT }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      className="w-full text-xs bg-transparent outline-none text-slate-600 placeholder:text-slate-300"
-                      placeholder="메모..."
-                      value={timeBlockMemos[`${selectedDate}__${hour}`] ?? ''}
-                      onChange={(e) => setTimeBlockMemo(selectedDate, hour, e.target.value)}
-                    />
-                  </div>
+                  {showMemos && (
+                    <div
+                      className="w-44 flex-shrink-0 border-t border-l border-slate-100 flex items-center px-2"
+                      style={{ height: SLOT_HEIGHT }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        className="w-full text-xs bg-transparent outline-none text-slate-600 placeholder:text-slate-300"
+                        placeholder="메모..."
+                        value={timeBlockMemos[`${selectedDate}__${hour}`] ?? ''}
+                        onChange={(e) => setTimeBlockMemo(selectedDate, hour, e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -198,7 +207,7 @@ export default function TimeBlock() {
               return (
                 <div
                   key={block.id}
-                  className="absolute left-16 right-48 rounded-lg px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+                  className={`absolute left-16 rounded-lg px-3 py-2 cursor-pointer hover:opacity-90 transition-opacity shadow-sm ${showMemos ? 'right-48' : 'right-4'}`}
                   style={{
                     top,
                     height: Math.max(height, 28),
@@ -216,7 +225,7 @@ export default function TimeBlock() {
                       {height >= 36 && (
                         <div className="text-white text-xs opacity-80">
                           {formatTime(block.startHour, block.startMinute)} – {formatTime(block.endHour, block.endMinute)}
-                          {cfg && ` · ${cfg.emoji}`}
+                          {cfg && ` · ${cfg.label}`}
                         </div>
                       )}
                     </div>
