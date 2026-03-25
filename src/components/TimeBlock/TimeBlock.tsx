@@ -211,7 +211,7 @@ export default function TimeBlock() {
                   style={{
                     top,
                     height: Math.max(height, 28),
-                    background: block.color,
+                    background: cfg ? cfg.color : block.color,
                     opacity: 0.92,
                   }}
                   onClick={(e) => {
@@ -331,7 +331,7 @@ export default function TimeBlock() {
                     <option value="">No domain</option>
                     {domains.map((d) => (
                       <option key={d} value={d}>
-                        {DOMAIN_CONFIG[d].emoji} {DOMAIN_CONFIG[d].label}
+                        {DOMAIN_CONFIG[d].label}
                       </option>
                     ))}
                   </select>
