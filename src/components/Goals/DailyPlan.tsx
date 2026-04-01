@@ -400,21 +400,6 @@ export default function DailyPlan() {
         />
       </div>
 
-      {/* Link to Time Block */}
-      <div className="card bg-pink-50 border-pink-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-pink-800">Visualize your day</h4>
-            <p className="text-sm text-pink-600 mt-0.5">Plan your time blocks for today.</p>
-          </div>
-          <button
-            className="btn-primary flex items-center gap-1"
-            onClick={() => navigate('/time-block')}
-          >
-            Time Block <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

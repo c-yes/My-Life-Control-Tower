@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import {
@@ -11,15 +10,15 @@ import {
   DAYS_OF_WEEK,
   formatDateDisplay,
 } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function WeeklyPlan() {
-  const navigate = useNavigate();
   const {
     weeklyTasks, addWeeklyTask, updateWeeklyTask, deleteWeeklyTask,
     monthlyGoals, monthlyPlanItems,
     weeklyPlanItems, addWeeklyPlanItem, updateWeeklyPlanItem, deleteWeeklyPlanItem,
+    weeklyFeedbacks, setWeeklyFeedback,
   } = useStore();
   const [year, setYear] = useState(getCurrentYear());
   const [week, setWeek] = useState(getCurrentWeek());
@@ -494,23 +493,16 @@ export default function WeeklyPlan() {
         </>
       )}
 
-      {/* Link to Daily */}
-      {tasks.length > 0 && (
-        <div className="card bg-pink-50 border-pink-100">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h4 className="font-semibold text-pink-800">Plan your day</h4>
-              <p className="text-sm text-pink-600 mt-0.5">Break down today's tasks in the daily plan.</p>
-            </div>
-            <button
-              className="btn-primary flex items-center gap-1"
-              onClick={() => navigate('/daily-plan')}
-            >
-              Daily Plan <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Self Feedback */}
+      <div className="card">
+        <h3 className="font-bold text-slate-800 mb-2">Self Feedback</h3>
+        <textarea
+          className="textarea h-28"
+          placeholder="이번 주는 어땠나요? 잘한 점, 아쉬운 점, 다음 주에 개선할 점은?"
+          value={weeklyFeedbacks[`${year}-${week}`] ?? ''}
+          onChange={(e) => setWeeklyFeedback(year, week, e.target.value)}
+        />
+      </div>
     </div>
   );
 }

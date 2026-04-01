@@ -99,6 +99,14 @@ interface AppState {
   // Time Block Memos: key = "${date}__${hour}"
   timeBlockMemos: Record<string, string>;
   setTimeBlockMemo: (date: string, hour: number, memo: string) => void;
+
+  // Self Feedbacks: key = "${year}" / "${year}-${month}" / "${year}-${week}"
+  annualFeedbacks: Record<string, string>;
+  monthlyFeedbacks: Record<string, string>;
+  weeklyFeedbacks: Record<string, string>;
+  setAnnualFeedback: (year: number, text: string) => void;
+  setMonthlyFeedback: (year: number, month: number, text: string) => void;
+  setWeeklyFeedback: (year: number, week: number, text: string) => void;
 }
 
 const defaultLifeCompass: LifeCompassData = {
@@ -292,6 +300,17 @@ export const useStore = create<AppState>()(
         set((state) => ({
           timeBlockMemos: { ...state.timeBlockMemos, [`${date}__${hour}`]: memo },
         })),
+
+      // Self Feedbacks
+      annualFeedbacks: {},
+      monthlyFeedbacks: {},
+      weeklyFeedbacks: {},
+      setAnnualFeedback: (year, text) =>
+        set((state) => ({ annualFeedbacks: { ...state.annualFeedbacks, [`${year}`]: text } })),
+      setMonthlyFeedback: (year, month, text) =>
+        set((state) => ({ monthlyFeedbacks: { ...state.monthlyFeedbacks, [`${year}-${month}`]: text } })),
+      setWeeklyFeedback: (year, week, text) =>
+        set((state) => ({ weeklyFeedbacks: { ...state.weeklyFeedbacks, [`${year}-${week}`]: text } })),
     }),
     {
       name: 'life-control-tower-storage',

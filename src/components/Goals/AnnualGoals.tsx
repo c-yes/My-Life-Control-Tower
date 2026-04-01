@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId, getCurrentYear } from '../../utils/helpers';
-import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, ArrowRight, Target } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, Target } from 'lucide-react';
 
 export default function AnnualGoals() {
-  const navigate = useNavigate();
-  const { annualGoals, addAnnualGoal, updateAnnualGoal, deleteAnnualGoal } = useStore();
+  const { annualGoals, addAnnualGoal, updateAnnualGoal, deleteAnnualGoal, annualFeedbacks, setAnnualFeedback } = useStore();
   const [year, setYear] = useState(getCurrentYear());
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -192,30 +190,6 @@ export default function AnnualGoals() {
         </div>
       )}
 
-      {/* Section: Plan */}
-      {goals.length > 0 && (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Plan</span>
-            <div className="flex-1 h-px bg-slate-200" />
-          </div>
-          <div className="card bg-pink-50 border-pink-100">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h4 className="font-semibold text-pink-800">Ready to plan your month?</h4>
-                <p className="text-sm text-pink-600 mt-0.5">Break down annual goals into monthly plans.</p>
-              </div>
-              <button
-                className="btn-primary flex items-center gap-1"
-                onClick={() => navigate('/monthly-plan')}
-              >
-                Monthly Plan <ArrowRight size={14} />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Section: Goals */}
       {goals.length > 0 && (
         <div className="flex items-center gap-2">
@@ -349,16 +323,6 @@ export default function AnnualGoals() {
                         />
                       )}
 
-                      {/* Link to Monthly */}
-                      <div className="mt-3 pt-3 border-t border-slate-100">
-                        <button
-                          className="text-xs flex items-center gap-1 text-pink-500 hover:text-pink-600"
-                          onClick={() => navigate('/monthly-plan')}
-                        >
-                          <ArrowRight size={12} />
-                          Create monthly goal from this
-                        </button>
-                      </div>
                     </>
                   )}
                 </div>
@@ -367,6 +331,17 @@ export default function AnnualGoals() {
           </div>
         );
       })}
+
+      {/* Self Feedback */}
+      <div className="card">
+        <h3 className="font-bold text-slate-800 mb-2">Self Feedback</h3>
+        <textarea
+          className="textarea h-28"
+          placeholder={`${year}년을 돌아보며: 잘한 점, 배운 점, 내년에 개선할 점은?`}
+          value={annualFeedbacks[`${year}`] ?? ''}
+          onChange={(e) => setAnnualFeedback(year, e.target.value)}
+        />
+      </div>
     </div>
   );
 }

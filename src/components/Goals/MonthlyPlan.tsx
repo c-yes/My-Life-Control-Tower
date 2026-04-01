@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId, getCurrentYear, getCurrentMonth, MONTH_NAMES } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, ExternalLink, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, ExternalLink, Edit2 } from 'lucide-react';
 
 export default function MonthlyPlan() {
-  const navigate = useNavigate();
   const {
     monthlyGoals, addMonthlyGoal, updateMonthlyGoal, deleteMonthlyGoal, annualGoals,
     monthlyPlanItems, addMonthlyPlanItem, updateMonthlyPlanItem, deleteMonthlyPlanItem,
+    monthlyFeedbacks, setMonthlyFeedback,
   } = useStore();
   const [year, setYear] = useState(getCurrentYear());
   const [month, setMonth] = useState(getCurrentMonth());
@@ -383,22 +382,19 @@ export default function MonthlyPlan() {
             </div>
           </div>
 
-          <div className="card bg-pink-50 border-pink-100">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h4 className="font-semibold text-pink-800">Ready to plan your week?</h4>
-                <p className="text-sm text-pink-600 mt-0.5">Break down monthly goals into weekly tasks.</p>
-              </div>
-              <button
-                className="btn-primary flex items-center gap-1"
-                onClick={() => navigate('/weekly-plan')}
-              >
-                Weekly Plan <ArrowRight size={14} />
-              </button>
-            </div>
-          </div>
         </>
       )}
+
+      {/* Self Feedback */}
+      <div className="card">
+        <h3 className="font-bold text-slate-800 mb-2">Self Feedback</h3>
+        <textarea
+          className="textarea h-28"
+          placeholder="이번 달은 어땠나요? 잘한 점, 아쉬운 점, 다음 달에 개선할 점은?"
+          value={monthlyFeedbacks[`${year}-${month}`] ?? ''}
+          onChange={(e) => setMonthlyFeedback(year, month, e.target.value)}
+        />
+      </div>
     </div>
   );
 }
