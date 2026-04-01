@@ -13,6 +13,7 @@ const navItems = [
   { path: '/mind-map', label: 'Mind Map' },
   { path: '/domain-tracker', label: 'Domain Tracker' },
   { path: '/wannabe-list', label: 'Wannabe List' },
+  { path: '/achievements', label: 'Achievements' },
 ];
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {

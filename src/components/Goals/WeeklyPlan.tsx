@@ -149,21 +149,49 @@ export default function WeeklyPlan() {
       </div>
 
       {/* Achievement */}
-      {tasks.length > 0 && (
-        <div className="card py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-700">Achievement</span>
-            <span className="text-sm font-bold text-pink-500">{achievementPct}%</span>
+      {(() => {
+        const completedGoals = thisWeekGoals.filter((i) => i.completed).length;
+        const goalsPct = thisWeekGoals.length > 0 ? Math.round((completedGoals / thisWeekGoals.length) * 100) : null;
+        return (
+          <div className="card py-4">
+            <div className="text-xs font-bold text-pink-500 uppercase tracking-widest mb-3">Achievement</div>
+            <div className="space-y-3">
+              {/* Tasks */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-500">Tasks</span>
+                  <span className="text-sm font-bold text-pink-500">
+                    {tasks.length > 0 ? `${achievementPct}%` : '-'}
+                  </span>
+                </div>
+                <div className="progress-bar h-2">
+                  <div
+                    className="progress-fill h-2"
+                    style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
+                  />
+                </div>
+                <div className="text-xs text-slate-400 mt-0.5">{completedCount} of {tasks.length} tasks completed</div>
+              </div>
+              {/* Goals */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-500">Goals</span>
+                  <span className="text-sm font-bold text-purple-500">
+                    {goalsPct !== null ? `${goalsPct}%` : '-'}
+                  </span>
+                </div>
+                <div className="progress-bar h-2">
+                  <div
+                    className="progress-fill h-2"
+                    style={{ width: `${goalsPct ?? 0}%`, background: '#7c3aed' }}
+                  />
+                </div>
+                <div className="text-xs text-slate-400 mt-0.5">{completedGoals} of {thisWeekGoals.length} goals completed</div>
+              </div>
+            </div>
           </div>
-          <div className="progress-bar h-3">
-            <div
-              className="progress-fill h-3"
-              style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 mt-1">{completedCount} of {tasks.length} tasks completed</div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Add Form */}
       {showAddForm && (
