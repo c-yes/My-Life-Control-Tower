@@ -108,7 +108,7 @@ export default function MonthlyPlan() {
           </select>
         </div>
         <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-          <Plus size={14} /> Add Goal
+          <Plus size={14} />
         </button>
       </div>
 

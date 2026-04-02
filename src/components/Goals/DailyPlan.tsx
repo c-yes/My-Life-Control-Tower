@@ -414,7 +414,7 @@ export default function DailyPlan() {
             ))}
           </select>
           <button className="btn-primary flex items-center gap-1" onClick={addTask}>
-            <Plus size={14} /> Add
+            <Plus size={14} />
           </button>
         </div>
       </div>

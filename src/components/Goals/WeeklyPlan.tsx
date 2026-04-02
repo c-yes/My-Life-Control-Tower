@@ -141,7 +141,7 @@ export default function WeeklyPlan() {
           <span className="text-xs text-slate-400">{weekRange}</span>
         </div>
         <button className="btn-primary flex items-center gap-1" onClick={() => setShowAddForm(true)}>
-          <Plus size={14} /> Add Task
+          <Plus size={14} />
         </button>
       </div>
 

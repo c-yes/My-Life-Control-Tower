@@ -1,42 +1,32 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { MindMapData } from '../../types';
+import { MindMapDocument, MindMapBranch } from '../../types';
 import { generateId } from '../../utils/helpers';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
-
-const EMPTY_CELLS = Array(9).fill('');
-
-// Mandala grid cell order: positions 0-8 where 4 = center
-const CELL_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+import { Plus, Trash2, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function MindMap() {
-  const { mindMaps, addMindMap, deleteMindMap } = useStore();
+  const { mindMapDocs, addMindMapDoc, deleteMindMapDoc } = useStore();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
-  const active = activeId ? mindMaps.find((m) => m.id === activeId) : null;
-
   function handleCreate() {
     if (!newTitle.trim()) return;
-    const map: MindMapData = {
+    const doc: MindMapDocument = {
       id: generateId(),
       title: newTitle.trim(),
-      cells: [...EMPTY_CELLS],
+      branches: [],
     };
-    addMindMap(map);
+    addMindMapDoc(doc);
     setNewTitle('');
     setCreating(false);
-    setActiveId(map.id);
+    setActiveId(doc.id);
   }
 
+  const active = activeId ? mindMapDocs.find((d) => d.id === activeId) : null;
+
   if (active) {
-    return (
-      <MandalartEditor
-        map={active}
-        onBack={() => setActiveId(null)}
-      />
-    );
+    return <MindMapEditor doc={active} onBack={() => setActiveId(null)} />;
   }
 
   return (
@@ -44,17 +34,17 @@ export default function MindMap() {
       <div className="flex items-start justify-between">
         <div />
         <button className="btn-primary flex items-center gap-1" onClick={() => setCreating(true)}>
-          <Plus size={14} /> 새 만다라트
+          <Plus size={14} />
         </button>
       </div>
 
       {creating && (
         <div className="card">
-          <h3 className="font-semibold text-slate-800 mb-3">새 만다라트 만들기</h3>
+          <h3 className="font-semibold text-slate-800 mb-3">새 마인드맵 만들기</h3>
           <div className="flex gap-2">
             <input
               className="input flex-1"
-              placeholder="만다라트 제목..."
+              placeholder="중심 주제..."
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
@@ -66,60 +56,48 @@ export default function MindMap() {
         </div>
       )}
 
-      {mindMaps.length === 0 && !creating && (
+      {mindMapDocs.length === 0 && !creating && (
         <div className="card text-center py-16">
           <div className="text-4xl mb-3">🧠</div>
-          <p className="text-slate-600 font-medium">아직 만다라트가 없습니다</p>
-          <p className="text-slate-400 text-sm mt-1">핵심 주제를 중심으로 8가지 아이디어를 펼쳐보세요</p>
+          <p className="text-slate-600 font-medium">아직 마인드맵이 없습니다</p>
+          <p className="text-slate-400 text-sm mt-1">중심 주제에서 가지를 뻗어 아이디어를 연결하세요</p>
           <button className="btn-primary mt-4" onClick={() => setCreating(true)}>
-            첫 만다라트 만들기
+            첫 마인드맵 만들기
           </button>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mindMaps.map((map) => (
+        {mindMapDocs.map((doc) => (
           <div
-            key={map.id}
+            key={doc.id}
             className="card hover:shadow-md transition-shadow cursor-pointer group"
-            onClick={() => setActiveId(map.id)}
+            onClick={() => setActiveId(doc.id)}
           >
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
-                {map.title}
+                {doc.title}
               </h3>
               <button
                 className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors"
-                onClick={(e) => { e.stopPropagation(); deleteMindMap(map.id); }}
+                onClick={(e) => { e.stopPropagation(); deleteMindMapDoc(doc.id); }}
               >
                 <Trash2 size={14} />
               </button>
             </div>
-            {/* Mini 3x3 preview */}
-            <div
-              className="grid gap-1"
-              style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
-            >
-              {CELL_POSITIONS.map((i) => (
-                <div
-                  key={i}
-                  className="rounded text-xs p-1 truncate text-center"
-                  style={{
-                    background: i === 4 ? '#1e1e2e' : '#2a2a3e',
-                    color: i === 4 ? '#f97316' : '#94a3b8',
-                    border: i === 4 ? '1px solid #f97316' : '1px solid #3f3f5a',
-                    aspectRatio: '1 / 1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {map.cells[i] || (i === 4 ? map.title : '')}
+            <div className="space-y-1">
+              {doc.branches.slice(0, 4).map((b) => (
+                <div key={b.id} className="flex items-start gap-2">
+                  <div className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" />
+                  <span className="text-xs text-slate-600 truncate">{b.text}</span>
                 </div>
               ))}
+              {doc.branches.length > 4 && (
+                <p className="text-xs text-slate-400 pl-4">+{doc.branches.length - 4}개 더</p>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-2 text-right">
-              {map.cells.filter((c) => c.trim()).length}/9 칸 작성
+              {doc.branches.length}개 가지
             </p>
           </div>
         ))}
@@ -128,36 +106,63 @@ export default function MindMap() {
   );
 }
 
-function MandalartEditor({ map, onBack }: { map: MindMapData; onBack: () => void }) {
-  const { updateMindMap } = useStore();
-  const [cells, setCells] = useState<string[]>(
-    map.cells.length === 9 ? map.cells : [...EMPTY_CELLS]
-  );
-  const [title, setTitle] = useState(map.title);
+function MindMapEditor({ doc, onBack }: { doc: MindMapDocument; onBack: () => void }) {
+  const { updateMindMapDoc } = useStore();
+  const [branches, setBranches] = useState<MindMapBranch[]>(doc.branches);
+  const [title, setTitle] = useState(doc.title);
   const [editingTitle, setEditingTitle] = useState(false);
-  const [editingCell, setEditingCell] = useState<number | null>(null);
+  const [newBranchText, setNewBranchText] = useState('');
+  const [addingBranch, setAddingBranch] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  function saveCell(idx: number, value: string) {
-    const next = cells.map((c, i) => (i === idx ? value : c));
-    setCells(next);
-    updateMindMap(map.id, { cells: next });
+  function save(updates: Partial<MindMapDocument>) {
+    updateMindMapDoc(doc.id, updates);
   }
 
   function saveTitle() {
-    if (title.trim()) {
-      updateMindMap(map.id, { title: title.trim() });
-    }
+    if (title.trim()) save({ title: title.trim() });
     setEditingTitle(false);
+  }
+
+  function addBranch() {
+    if (!newBranchText.trim()) return;
+    const branch: MindMapBranch = { id: generateId(), text: newBranchText.trim(), items: [] };
+    const next = [...branches, branch];
+    setBranches(next);
+    save({ branches: next });
+    setNewBranchText('');
+    setAddingBranch(false);
+  }
+
+  function updateBranch(id: string, updates: Partial<MindMapBranch>) {
+    const next = branches.map((b) => (b.id === id ? { ...b, ...updates } : b));
+    setBranches(next);
+    save({ branches: next });
+  }
+
+  function deleteBranch(id: string) {
+    const next = branches.filter((b) => b.id !== id);
+    setBranches(next);
+    save({ branches: next });
+  }
+
+  function addItem(branchId: string, text: string) {
+    const branch = branches.find((b) => b.id === branchId);
+    if (!branch || !text.trim()) return;
+    updateBranch(branchId, { items: [...branch.items, text.trim()] });
+  }
+
+  function deleteItem(branchId: string, itemIdx: number) {
+    const branch = branches.find((b) => b.id === branchId);
+    if (!branch) return;
+    updateBranch(branchId, { items: branch.items.filter((_, i) => i !== itemIdx) });
   }
 
   return (
     <div className="space-y-6 fade-in">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button
-          className="btn-secondary flex items-center gap-1"
-          onClick={onBack}
-        >
+        <button className="btn-secondary flex items-center gap-1" onClick={onBack}>
           <ArrowLeft size={14} /> 목록으로
         </button>
         <div className="flex-1">
@@ -180,80 +185,182 @@ function MandalartEditor({ map, onBack }: { map: MindMapData; onBack: () => void
             </h2>
           )}
         </div>
+        <button
+          className="btn-primary flex items-center gap-1"
+          onClick={() => setAddingBranch(true)}
+        >
+          <Plus size={14} />
+        </button>
       </div>
 
-      {/* Mandalart 3x3 Grid */}
-      <div
-        className="rounded-2xl p-6"
-        style={{ background: '#0f0f1a' }}
-      >
-        {/* Title bar */}
-        <div
-          className="text-base font-bold mb-5 pb-3"
-          style={{
-            color: '#f8fafc',
-            borderBottom: '2px solid #f97316',
-            display: 'inline-block',
-            paddingRight: '2rem',
-          }}
-        >
+      {/* Central topic */}
+      <div className="flex justify-center">
+        <div className="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-lg shadow-md">
           {title}
         </div>
-
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
-        >
-          {CELL_POSITIONS.map((idx) => {
-            const isCenter = idx === 4;
-            const isEditing = editingCell === idx;
-
-            return (
-              <div
-                key={idx}
-                className="relative rounded-xl cursor-text"
-                style={{
-                  background: isCenter ? '#1c1c2e' : '#16162a',
-                  border: isCenter ? '2px solid #f97316' : '1px solid #2d2d4a',
-                  aspectRatio: '1 / 1',
-                  padding: '12px',
-                  transition: 'border-color 0.15s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-                onClick={() => !isEditing && setEditingCell(idx)}
-              >
-                {isEditing ? (
-                  <textarea
-                    autoFocus
-                    className="flex-1 w-full resize-none bg-transparent outline-none text-sm"
-                    style={{ color: isCenter ? '#f97316' : '#e2e8f0' }}
-                    value={cells[idx]}
-                    placeholder={isCenter ? 'Core topic...' : 'Idea...'}
-                    onChange={(e) => saveCell(idx, e.target.value)}
-                    onBlur={() => setEditingCell(null)}
-                  />
-                ) : (
-                  <div
-                    className="flex-1 text-sm whitespace-pre-wrap overflow-hidden"
-                    style={{
-                      color: cells[idx]
-                        ? isCenter ? '#f97316' : '#e2e8f0'
-                        : '#3f3f5a',
-                    }}
-                  >
-                    {cells[idx] || (isCenter ? 'Core topic...' : 'Idea...')}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <p className="text-xs mt-4" style={{ color: '#4a4a6a' }}>
-          각 칸을 클릭하여 내용을 입력하세요 · 자동 저장됩니다
-        </p>
       </div>
+
+      {addingBranch && (
+        <div className="card">
+          <p className="text-sm font-medium text-slate-700 mb-2">새 가지 추가</p>
+          <div className="flex gap-2">
+            <input
+              className="input flex-1"
+              placeholder="가지 이름..."
+              value={newBranchText}
+              onChange={(e) => setNewBranchText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addBranch()}
+              autoFocus
+            />
+            <button className="btn-primary" onClick={addBranch}>추가</button>
+            <button className="btn-secondary" onClick={() => setAddingBranch(false)}>취소</button>
+          </div>
+        </div>
+      )}
+
+      {branches.length === 0 && !addingBranch && (
+        <div className="card text-center py-10">
+          <p className="text-slate-400 text-sm">가지를 추가해서 아이디어를 펼쳐보세요</p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {branches.map((branch) => (
+          <BranchCard
+            key={branch.id}
+            branch={branch}
+            collapsed={!!collapsed[branch.id]}
+            onToggle={() => setCollapsed((c) => ({ ...c, [branch.id]: !c[branch.id] }))}
+            onUpdateText={(text) => updateBranch(branch.id, { text })}
+            onDelete={() => deleteBranch(branch.id)}
+            onAddItem={(text) => addItem(branch.id, text)}
+            onDeleteItem={(idx) => deleteItem(branch.id, idx)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BranchCard({
+  branch,
+  collapsed,
+  onToggle,
+  onUpdateText,
+  onDelete,
+  onAddItem,
+  onDeleteItem,
+}: {
+  branch: MindMapBranch;
+  collapsed: boolean;
+  onToggle: () => void;
+  onUpdateText: (text: string) => void;
+  onDelete: () => void;
+  onAddItem: (text: string) => void;
+  onDeleteItem: (idx: number) => void;
+}) {
+  const [editingText, setEditingText] = useState(false);
+  const [textDraft, setTextDraft] = useState(branch.text);
+  const [newItem, setNewItem] = useState('');
+  const [addingItem, setAddingItem] = useState(false);
+
+  function saveText() {
+    if (textDraft.trim()) onUpdateText(textDraft.trim());
+    setEditingText(false);
+  }
+
+  function submitItem() {
+    if (newItem.trim()) {
+      onAddItem(newItem.trim());
+      setNewItem('');
+      setAddingItem(false);
+    }
+  }
+
+  return (
+    <div className="card">
+      {/* Branch header */}
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 rounded-full bg-indigo-500 flex-shrink-0" />
+        {editingText ? (
+          <input
+            className="input flex-1 text-sm font-semibold"
+            value={textDraft}
+            onChange={(e) => setTextDraft(e.target.value)}
+            onBlur={saveText}
+            onKeyDown={(e) => e.key === 'Enter' && saveText()}
+            autoFocus
+          />
+        ) : (
+          <span
+            className="flex-1 font-semibold text-slate-800 cursor-pointer hover:text-indigo-600"
+            onDoubleClick={() => { setTextDraft(branch.text); setEditingText(true); }}
+          >
+            {branch.text}
+          </span>
+        )}
+        <span className="text-xs text-slate-400">{branch.items.length}개</span>
+        <button
+          className="p-1 rounded hover:bg-slate-100 text-slate-400"
+          onClick={() => setAddingItem(true)}
+          title="항목 추가"
+        >
+          <Plus size={13} />
+        </button>
+        <button className="p-1 rounded hover:bg-slate-100 text-slate-400" onClick={onToggle}>
+          {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
+        <button
+          className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-500"
+          onClick={onDelete}
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div className="mt-3 space-y-1 pl-5">
+          {branch.items.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2 group">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 mt-1.5 flex-shrink-0" />
+              <span className="flex-1 text-sm text-slate-700">{item}</span>
+              <button
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 transition-opacity"
+                onClick={() => onDeleteItem(idx)}
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+
+          {addingItem && (
+            <div className="flex gap-2 mt-2">
+              <input
+                className="input flex-1 text-sm"
+                placeholder="항목 입력..."
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitItem();
+                  if (e.key === 'Escape') setAddingItem(false);
+                }}
+                autoFocus
+              />
+              <button className="btn-primary text-xs py-1" onClick={submitItem}>추가</button>
+              <button className="btn-secondary text-xs py-1" onClick={() => setAddingItem(false)}>취소</button>
+            </div>
+          )}
+
+          {branch.items.length === 0 && !addingItem && (
+            <p
+              className="text-xs text-slate-400 cursor-pointer hover:text-indigo-500"
+              onClick={() => setAddingItem(true)}
+            >
+              + 항목 추가
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

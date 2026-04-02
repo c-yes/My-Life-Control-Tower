@@ -11,6 +11,7 @@ import DailyPlan from './components/Goals/DailyPlan';
 import TimeBlock from './components/TimeBlock/TimeBlock';
 import Miracle21 from './components/Miracle21/Miracle21';
 import MindMap from './components/MindMap/MindMap';
+import Mandalart from './components/Mandalart/Mandalart';
 import DomainTracker from './components/DomainTracker/DomainTracker';
 import WannabeList from './components/WannabeList/WannabeList';
 import Achievements from './components/Achievements/Achievements';
@@ -129,6 +130,7 @@ function AppInner() {
               <Route path="/time-block" element={<TimeBlock />} />
               <Route path="/miracle21" element={<Miracle21 />} />
               <Route path="/mind-map" element={<MindMap />} />
+              <Route path="/mandalart" element={<Mandalart />} />
               <Route path="/domain-tracker" element={<DomainTracker />} />
               <Route path="/wannabe-list" element={<WannabeList />} />
               <Route path="/achievements" element={<Achievements />} />

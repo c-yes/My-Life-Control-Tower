@@ -55,7 +55,6 @@ export default function Miracle21() {
 
   const selected = selectedId ? miracle21Habits.find((h) => h.id === selectedId) : null;
 
-  // Get active step index (last step)
   function activeStepIdx(h: Miracle21Habit) {
     return h.steps.length - 1;
   }
@@ -63,19 +62,12 @@ export default function Miracle21() {
   return (
     <div className="flex flex-col md:flex-row gap-4 fade-in" style={{ minHeight: 'calc(100vh - 160px)' }}>
       {/* ── Sidebar ── */}
-      <div
-        className="md:w-56 md:flex-shrink-0 rounded-xl p-3 flex md:flex-col flex-row gap-2 overflow-x-auto"
-        style={{ background: '#0f0f1a' }}
-      >
-        {/* New habit button */}
+      <div className="md:w-56 md:flex-shrink-0 bg-white border border-slate-200 rounded-xl p-3 flex md:flex-col flex-row gap-2 overflow-x-auto">
         <button
-          className="flex-shrink-0 md:w-full text-center py-2 px-3 rounded-lg text-xs border border-dashed transition-colors"
-          style={{ borderColor: '#3f3f5a', color: '#94a3b8' }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#f97316')}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#3f3f5a')}
+          className="flex-shrink-0 md:w-full text-center py-2 px-3 rounded-lg text-xs border border-dashed border-slate-300 text-slate-500 hover:border-orange-400 hover:text-orange-500 transition-colors"
           onClick={() => setShowCreate(true)}
         >
-          + 새 습관 만들기
+          +
         </button>
 
         {miracle21Habits.map((h) => {
@@ -86,15 +78,15 @@ export default function Miracle21() {
               key={h.id}
               className="flex-shrink-0 md:w-full text-left px-3 py-2.5 rounded-lg transition-all"
               style={{
-                background: isSelected ? '#1c1c2e' : 'transparent',
+                background: isSelected ? '#fff7ed' : 'transparent',
                 borderLeft: isSelected ? '3px solid #f97316' : '3px solid transparent',
               }}
               onClick={() => setSelectedId(h.id)}
             >
-              <div className="text-sm font-semibold truncate" style={{ color: isSelected ? '#f97316' : '#e2e8f0' }}>
+              <div className="text-sm font-semibold truncate" style={{ color: isSelected ? '#ea580c' : '#334155' }}>
                 {h.name}
               </div>
-              <div className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>
+              <div className="text-xs mt-0.5 text-slate-400">
                 Step {stepIdx + 1}
               </div>
             </button>
@@ -221,18 +213,14 @@ function HabitDetail({
       </div>
 
       {/* Final Goal */}
-      <div
-        className="rounded-xl p-4 border"
-        style={{ background: '#0f0f1a', borderColor: '#2d2d4a' }}
-      >
-        <div className="text-xs font-semibold mb-2" style={{ color: '#f97316' }}>
+      <div className="card">
+        <div className="text-xs font-semibold mb-2 text-orange-500">
           최종 목표 (Final Goal)
         </div>
         {editingGoal ? (
           <textarea
             autoFocus
-            className="w-full bg-transparent text-sm resize-none outline-none border-b border-slate-600 pb-1"
-            style={{ color: '#e2e8f0' }}
+            className="w-full bg-transparent text-sm resize-none outline-none border-b border-slate-300 pb-1 text-slate-800"
             value={goalDraft}
             onChange={(e) => setGoalDraft(e.target.value)}
             onBlur={saveGoal}
@@ -242,7 +230,7 @@ function HabitDetail({
         ) : (
           <p
             className="text-sm cursor-text"
-            style={{ color: habit.finalGoal ? '#e2e8f0' : '#4a4a6a' }}
+            style={{ color: habit.finalGoal ? '#1e293b' : '#94a3b8' }}
             onClick={() => { setGoalDraft(habit.finalGoal); setEditingGoal(true); }}
           >
             {habit.finalGoal || '최종적으로 이루고 싶은 목표를 입력하세요...'}
@@ -266,14 +254,12 @@ function HabitDetail({
       {(() => {
         const lastStep = habit.steps[habit.steps.length - 1];
         const { done } = getStepProgress(lastStep);
-        // Show "+ Step N 추가" when all 21 days are done or the 21-day window passed
         const lastDayDate = getDayDate(lastStep.startDate, 20);
         const canAdd = done >= 21 || lastDayDate < today;
         if (!canAdd) return null;
         return (
           <button
-            className="w-full py-3 text-sm font-medium rounded-xl border border-dashed transition-all"
-            style={{ borderColor: '#f97316', color: '#f97316' }}
+            className="w-full py-3 text-sm font-medium rounded-xl border border-dashed border-orange-300 text-orange-500 hover:bg-orange-50 transition-all"
             onClick={addNextStep}
           >
             + Step {habit.steps.length + 1} 추가
@@ -338,21 +324,14 @@ function StepCard({
   }
 
   return (
-    <div
-      className="rounded-xl border overflow-hidden"
-      style={{ borderColor: '#2d2d4a', background: '#0f0f1a' }}
-    >
+    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
       {/* Step header */}
       <div
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer"
-        style={{ background: '#16162a' }}
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer bg-slate-50 border-b border-slate-200"
         onClick={() => setCollapsed(!collapsed)}
       >
         {/* S badge */}
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-          style={{ background: '#f97316', color: '#fff' }}
-        >
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-orange-500 text-white">
           S{stepNumber}
         </div>
 
@@ -361,8 +340,7 @@ function StepCard({
           {editingGoal && !collapsed ? (
             <input
               autoFocus
-              className="bg-transparent outline-none text-sm font-medium w-full border-b"
-              style={{ color: '#e2e8f0', borderColor: '#f97316' }}
+              className="bg-transparent outline-none text-sm font-medium w-full border-b border-orange-400 text-slate-800"
               value={goalDraft}
               onChange={(e) => setGoalDraft(e.target.value)}
               onBlur={saveGoal}
@@ -376,7 +354,7 @@ function StepCard({
           ) : (
             <span
               className="text-sm font-medium truncate block"
-              style={{ color: step.goal ? '#e2e8f0' : '#4a4a6a' }}
+              style={{ color: step.goal ? '#1e293b' : '#94a3b8' }}
               onDoubleClick={(e) => {
                 e.stopPropagation();
                 setGoalDraft(step.goal);
@@ -387,11 +365,7 @@ function StepCard({
               {step.goal || `Step ${stepNumber} 목표 (더블클릭해서 입력)`}
             </span>
           )}
-          {/* Underline */}
-          <div
-            className="h-0.5 mt-0.5 rounded-full"
-            style={{ width: '40%', background: '#f97316' }}
-          />
+          <div className="h-0.5 mt-0.5 rounded-full w-2/5 bg-orange-400" />
         </div>
 
         {/* Start date */}
@@ -399,8 +373,7 @@ function StepCard({
           <input
             type="date"
             autoFocus
-            className="text-xs rounded px-1 py-0.5 outline-none border flex-shrink-0"
-            style={{ background: '#1c1c2e', borderColor: '#f97316', color: '#f97316' }}
+            className="text-xs rounded px-1 py-0.5 outline-none border border-orange-400 text-orange-600 bg-orange-50 flex-shrink-0"
             value={dateDraft}
             onChange={(e) => setDateDraft(e.target.value)}
             onBlur={() => {
@@ -419,8 +392,7 @@ function StepCard({
           />
         ) : (
           <span
-            className="text-xs flex-shrink-0 cursor-pointer hover:underline"
-            style={{ color: '#64748b' }}
+            className="text-xs flex-shrink-0 cursor-pointer hover:underline text-slate-400"
             title="클릭하여 시작일 수정"
             onClick={(e) => {
               e.stopPropagation();
@@ -434,13 +406,13 @@ function StepCard({
         )}
 
         {/* Progress */}
-        <span className="text-xs flex-shrink-0" style={{ color: '#f97316' }}>
+        <span className="text-xs flex-shrink-0 text-orange-500 font-medium">
           {done}/21 ({pct}%)
         </span>
         {collapsed ? (
-          <ChevronDown size={16} style={{ color: '#4a4a6a' }} />
+          <ChevronDown size={16} className="text-slate-400" />
         ) : (
-          <ChevronUp size={16} style={{ color: '#4a4a6a' }} />
+          <ChevronUp size={16} className="text-slate-400" />
         )}
       </div>
 
@@ -462,48 +434,45 @@ function StepCard({
                     border: isToday
                       ? '2px solid #f97316'
                       : dayEntry.completed
-                      ? '1px solid #f9731660'
-                      : '1px solid #2d2d4a',
+                      ? '1px solid #86efac'
+                      : '1px solid #e2e8f0',
                     background: dayEntry.completed
-                      ? '#1c1008'
+                      ? '#f0fdf4'
                       : isToday
-                      ? '#1c120a'
-                      : '#16162a',
+                      ? '#fff7ed'
+                      : '#f8fafc',
                     opacity: isFuture ? 0.5 : 1,
-                    minHeight: 120,
+                    minHeight: 100,
                   }}
                 >
-                  {/* Day header: checkbox + D label + date */}
+                  {/* Day header */}
                   <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
                     <div
                       className="flex-shrink-0 cursor-pointer"
                       onClick={() => !isFuture && toggleDay(dayIdx)}
                     >
                       {dayEntry.completed ? (
-                        <Check size={14} style={{ color: '#f97316' }} />
+                        <Check size={14} className="text-green-500" />
                       ) : (
-                        <div
-                          className="w-3.5 h-3.5 rounded border"
-                          style={{ borderColor: '#3f3f5a' }}
-                        />
+                        <div className="w-3.5 h-3.5 rounded border border-slate-300" />
                       )}
                     </div>
                     <div>
-                      <div className="text-xs font-semibold leading-none" style={{ color: '#94a3b8' }}>
+                      <div className="text-xs font-semibold leading-none text-slate-600">
                         D{dayIdx + 1}
                       </div>
-                      <div className="text-xs leading-none mt-0.5" style={{ color: '#64748b', fontSize: 9 }}>
+                      <div className="leading-none mt-0.5 text-slate-400" style={{ fontSize: 9 }}>
                         {format(new Date(dateStr + 'T12:00:00'), 'MM-dd')}
                       </div>
                     </div>
                   </div>
 
-                  {/* Note area — expandable */}
+                  {/* Note area */}
                   {isEditing ? (
                     <textarea
                       autoFocus
-                      className="flex-1 w-full bg-transparent resize-none outline-none px-2 pb-2"
-                      style={{ color: '#94a3b8', fontSize: 11, minHeight: 72 }}
+                      className="flex-1 w-full bg-transparent resize-none outline-none px-2 pb-2 text-slate-600"
+                      style={{ fontSize: 11, minHeight: 60 }}
                       value={dayNoteDraft}
                       onChange={(e) => setDayNoteDraft(e.target.value)}
                       onBlur={saveDayNote}
@@ -513,7 +482,12 @@ function StepCard({
                   ) : (
                     <div
                       className="flex-1 px-2 pb-2 cursor-text overflow-hidden"
-                      style={{ fontSize: 11, color: dayEntry.note ? '#94a3b8' : '#3f3f5a', minHeight: 72, whiteSpace: 'pre-wrap' }}
+                      style={{
+                        fontSize: 11,
+                        color: dayEntry.note ? '#475569' : '#cbd5e1',
+                        minHeight: 60,
+                        whiteSpace: 'pre-wrap',
+                      }}
                       onClick={() => !isFuture && openDayNote(dayIdx)}
                     >
                       {dayEntry.note || ''}
@@ -526,17 +500,12 @@ function StepCard({
 
           {/* Self feedback */}
           <div>
-            <div className="text-xs font-semibold mb-1.5" style={{ color: '#f97316' }}>
+            <div className="text-xs font-semibold mb-1.5 text-orange-500">
               셀프 피드백
             </div>
             <textarea
-              className="w-full rounded-xl border text-sm resize-none p-3"
-              style={{
-                background: '#16162a',
-                borderColor: '#2d2d4a',
-                color: '#e2e8f0',
-                minHeight: 80,
-              }}
+              className="w-full rounded-xl border border-slate-200 text-sm resize-none p-3 bg-slate-50 text-slate-800"
+              style={{ minHeight: 80 }}
               value={step.feedback}
               onChange={(e) => onChange({ feedback: e.target.value })}
               placeholder="21일을 돌이보며 — 무엇이 달라졌는가? 다음 스텝 목표는?"

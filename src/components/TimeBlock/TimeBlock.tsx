@@ -155,7 +155,7 @@ export default function TimeBlock() {
             {showMemos ? '메모 숨기기' : '메모'}
           </button>
           <button className="btn-primary flex items-center gap-1" onClick={() => openAddForm()}>
-            <Plus size={14} /> Block
+            <Plus size={14} />
           </button>
         </div>
       </div>

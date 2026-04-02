@@ -112,12 +112,26 @@ export interface Miracle21Habit {
   steps: Miracle21Step[];
 }
 
-// ── Mandalart Mind Map ───────────────────────────────────────────────────────
+// ── Mandalart ────────────────────────────────────────────────────────────────
 
 export interface MindMapData {
   id: string;
   title: string;
   cells: string[]; // 9 cells; index 4 = center (핵심 주제)
+}
+
+// ── Mind Map (tree) ──────────────────────────────────────────────────────────
+
+export interface MindMapBranch {
+  id: string;
+  text: string;
+  items: string[];
+}
+
+export interface MindMapDocument {
+  id: string;
+  title: string;
+  branches: MindMapBranch[];
 }
 
 // ── Domain Tracker ───────────────────────────────────────────────────────────

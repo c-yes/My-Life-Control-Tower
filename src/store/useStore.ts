@@ -11,6 +11,7 @@ import {
   TimeBlockData,
   Habit,
   MindMapData,
+  MindMapDocument,
   DomainScore,
   DomainEntry,
   Miracle21Habit,
@@ -76,11 +77,17 @@ interface AppState {
   deleteHabit: (id: string) => void;
   toggleHabitCompletion: (habitId: string, date: string) => void;
 
-  // Mind Maps (Mandalart)
+  // Mandalart
   mindMaps: MindMapData[];
   addMindMap: (map: MindMapData) => void;
   updateMindMap: (id: string, updates: Partial<MindMapData>) => void;
   deleteMindMap: (id: string) => void;
+
+  // Mind Map (tree)
+  mindMapDocs: MindMapDocument[];
+  addMindMapDoc: (doc: MindMapDocument) => void;
+  updateMindMapDoc: (id: string, updates: Partial<MindMapDocument>) => void;
+  deleteMindMapDoc: (id: string) => void;
 
   // Domain Tracker entries (weekly table)
   domainEntries: DomainEntry[];
@@ -246,7 +253,7 @@ export const useStore = create<AppState>()(
           }),
         })),
 
-      // Mind Maps
+      // Mandalart
       mindMaps: [],
       addMindMap: (map) =>
         set((state) => ({ mindMaps: [...state.mindMaps, map] })),
@@ -256,6 +263,17 @@ export const useStore = create<AppState>()(
         })),
       deleteMindMap: (id) =>
         set((state) => ({ mindMaps: state.mindMaps.filter((m) => m.id !== id) })),
+
+      // Mind Map (tree)
+      mindMapDocs: [],
+      addMindMapDoc: (doc) =>
+        set((state) => ({ mindMapDocs: [...state.mindMapDocs, doc] })),
+      updateMindMapDoc: (id, updates) =>
+        set((state) => ({
+          mindMapDocs: state.mindMapDocs.map((d) => (d.id === id ? { ...d, ...updates } : d)),
+        })),
+      deleteMindMapDoc: (id) =>
+        set((state) => ({ mindMapDocs: state.mindMapDocs.filter((d) => d.id !== id) })),
 
       // Domain Tracker entries
       domainEntries: [],

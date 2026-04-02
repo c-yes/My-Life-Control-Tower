@@ -11,6 +11,7 @@ const navItems = [
   { path: '/time-block', label: 'Time Block' },
   { path: '/miracle21', label: 'Miracle 21' },
   { path: '/mind-map', label: 'Mind Map' },
+  { path: '/mandalart', label: 'Mandal Art' },
   { path: '/domain-tracker', label: 'Domain Tracker' },
   { path: '/wannabe-list', label: 'Wannabe List' },
   { path: '/achievements', label: 'Achievements' },

@@ -115,7 +115,6 @@ export default function LifeCompass() {
             onClick={() => setShowAddValue(true)}
           >
             <Plus size={14} />
-            Add Value
           </button>
         </div>
 
