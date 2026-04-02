@@ -1,25 +1,15 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { DOMAIN_CONFIG } from '../../types';
-import {
-  getCurrentYear,
-  getCurrentMonth,
-  getCurrentWeek,
-} from '../../utils/helpers';
-import { getWeek, getYear, startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
+import { getCurrentYear, getCurrentMonth } from '../../utils/helpers';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Achievements() {
   const [viewYear, setViewYear] = useState(getCurrentYear());
   const [viewMonth, setViewMonth] = useState(getCurrentMonth());
 
-  const {
-    dailyPlans,
-    weeklyTasks,
-    weeklyPlanItems,
-    monthlyGoals,
-    annualGoals,
-  } = useStore();
+  const { dailyPlans, monthlyGoals, annualGoals } = useStore();
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -29,18 +19,6 @@ export default function Achievements() {
     const tasks = plan.tasks;
     if (tasks.length === 0) return null;
     return Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100);
-  }
-
-  function getWeeklyTaskScore(year: number, week: number): number | null {
-    const tasks = weeklyTasks.filter((t) => t.year === year && t.week === week);
-    if (tasks.length === 0) return null;
-    return Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100);
-  }
-
-  function getWeeklyGoalScore(year: number, week: number): number | null {
-    const goals = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
-    if (goals.length === 0) return null;
-    return Math.round((goals.filter((i) => i.completed).length / goals.length) * 100);
   }
 
   function getMonthlyScore(year: number, month: number): number | null {
@@ -69,19 +47,9 @@ export default function Achievements() {
   // Start on Monday (0=Mon … 6=Sun)
   const startDayOfWeek = (monthStart.getDay() + 6) % 7;
 
-  // Unique weeks in this month
-  const weekSet = new Map<string, { year: number; week: number }>();
-  days.forEach((d) => {
-    const w = getWeek(d, { weekStartsOn: 1 });
-    const y = getYear(d);
-    weekSet.set(`${y}-${w}`, { year: y, week: w });
-  });
-  const weekList = Array.from(weekSet.values());
-
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const thisYear = getCurrentYear();
   const thisMonth = getCurrentMonth();
-  const thisWeek = getCurrentWeek();
 
   const DAYS_HEADER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -186,69 +154,6 @@ export default function Achievements() {
               <span className="text-xs text-slate-400">{label}</span>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* ── Weekly Achievements ────────────────────────────────────────────── */}
-      <div className="card">
-        <h3 className="font-semibold text-slate-800 mb-4">
-          Weekly Achievements ({viewYear}년 {viewMonth}월)
-        </h3>
-        <div className="space-y-3">
-          {weekList.map(({ year, week }) => {
-            const taskScore = getWeeklyTaskScore(year, week);
-            const goalScore = getWeeklyGoalScore(year, week);
-            const isCurrentWeek = year === thisYear && week === thisWeek;
-
-            return (
-              <div
-                key={`${year}-${week}`}
-                className={`p-3 rounded-xl border ${
-                  isCurrentWeek ? 'border-pink-300 bg-pink-50' : 'border-slate-200 bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-xs font-semibold ${isCurrentWeek ? 'text-pink-700' : 'text-slate-600'}`}>
-                    Week {week}{isCurrentWeek ? ' (현재)' : ''}
-                  </span>
-                  <div className="flex gap-3">
-                    {taskScore !== null && (
-                      <span className="text-xs font-bold text-pink-500">Tasks {taskScore}%</span>
-                    )}
-                    {goalScore !== null && (
-                      <span className="text-xs font-bold text-purple-500">Goals {goalScore}%</span>
-                    )}
-                  </div>
-                </div>
-                {taskScore !== null && (
-                  <div className="mb-1.5">
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-0.5">
-                      <span>Tasks</span>
-                    </div>
-                    <div className="progress-bar h-2">
-                      <div className="progress-fill h-2" style={{ width: `${taskScore}%`, background: '#c45c8a' }} />
-                    </div>
-                  </div>
-                )}
-                {goalScore !== null && (
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-0.5">
-                      <span>Goals</span>
-                    </div>
-                    <div className="progress-bar h-2">
-                      <div className="progress-fill h-2" style={{ width: `${goalScore}%`, background: '#7c3aed' }} />
-                    </div>
-                  </div>
-                )}
-                {taskScore === null && goalScore === null && (
-                  <p className="text-xs text-slate-400">이번 주 데이터가 없어요.</p>
-                )}
-              </div>
-            );
-          })}
-          {weekList.length === 0 && (
-            <p className="text-xs text-slate-400">표시할 주간 데이터가 없어요.</p>
-          )}
         </div>
       </div>
 

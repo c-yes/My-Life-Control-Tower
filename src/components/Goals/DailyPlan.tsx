@@ -307,84 +307,88 @@ export default function DailyPlan() {
             return (
               <div
                 key={task.id}
-                className={`group flex items-center gap-2 p-3 rounded-lg border ${
+                className={`group p-3 rounded-lg border ${
                   task.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
                 }`}
               >
-                {/* 순서 변경 */}
-                <div className="hidden md:flex flex-col flex-shrink-0">
-                  <button
-                    className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                    disabled={idx === 0}
-                    onClick={() => moveTask(task.id, 'up')}
-                  >
-                    <ChevronUp size={12} />
-                  </button>
-                  <button
-                    className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                    disabled={idx === plan.tasks.length - 1}
-                    onClick={() => moveTask(task.id, 'down')}
-                  >
-                    <ChevronDown size={12} />
-                  </button>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={task.completed}
-                  onChange={() => toggleTask(task.id)}
-                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
-                  style={cfg ? { accentColor: cfg.color } : {}}
-                />
-                {editingTaskId === task.id ? (
+                {/* Row 1: reorder + checkbox + title */}
+                <div className="flex items-start gap-2">
+                  <div className="hidden md:flex flex-col flex-shrink-0 mt-0.5">
+                    <button
+                      className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+                      disabled={idx === 0}
+                      onClick={() => moveTask(task.id, 'up')}
+                    >
+                      <ChevronUp size={12} />
+                    </button>
+                    <button
+                      className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+                      disabled={idx === plan.tasks.length - 1}
+                      onClick={() => moveTask(task.id, 'down')}
+                    >
+                      <ChevronDown size={12} />
+                    </button>
+                  </div>
                   <input
-                    autoFocus
-                    className="input flex-1 text-sm py-0.5"
-                    value={editTaskTitle}
-                    onChange={(e) => setEditTaskTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveEditTask();
-                      if (e.key === 'Escape') setEditingTaskId(null);
-                    }}
-                    onBlur={saveEditTask}
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => toggleTask(task.id)}
+                    className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                    style={cfg ? { accentColor: cfg.color } : {}}
                   />
-                ) : (
-                  <span className={`flex-1 text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                    {task.title}
-                  </span>
-                )}
-                {cfg && editingTaskId !== task.id && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: `${cfg.color}20`, color: cfg.color }}
-                  >
-                    {cfg.label}
-                  </span>
-                )}
+                  {editingTaskId === task.id ? (
+                    <input
+                      autoFocus
+                      className="input flex-1 text-sm py-0.5"
+                      value={editTaskTitle}
+                      onChange={(e) => setEditTaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEditTask();
+                        if (e.key === 'Escape') setEditingTaskId(null);
+                      }}
+                      onBlur={saveEditTask}
+                    />
+                  ) : (
+                    <span className={`flex-1 text-sm leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                      {task.title}
+                    </span>
+                  )}
+                </div>
+                {/* Row 2: domain badge + actions (below title) */}
                 {editingTaskId !== task.id && (
-                  <button
-                    className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500"
-                    onClick={() => startEditTask(task)}
-                  >
-                    <Edit2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-1 mt-1.5 pl-6 md:pl-10">
+                    {cfg && (
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: `${cfg.color}20`, color: cfg.color }}
+                      >
+                        {cfg.label}
+                      </span>
+                    )}
+                    <div className="flex-1" />
+                    <button
+                      className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500"
+                      onClick={() => startEditTask(task)}
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      className={`p-1 rounded transition-colors ${
+                        isPinned ? 'text-pink-500 hover:text-pink-600' : 'text-slate-300 hover:text-pink-400'
+                      }`}
+                      onClick={() => pinToTop3(task.title)}
+                      title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
+                    >
+                      <Star size={13} fill={isPinned ? 'currentColor' : 'none'} />
+                    </button>
+                    <button
+                      className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
+                      onClick={() => deleteTask(task.id)}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 )}
-                <button
-                  className={`p-1 rounded transition-colors ${
-                    isPinned
-                      ? 'text-pink-500 hover:text-pink-600'
-                      : 'text-slate-300 hover:text-pink-400'
-                  }`}
-                  onClick={() => pinToTop3(task.title)}
-                  title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
-                >
-                  <Star size={14} fill={isPinned ? 'currentColor' : 'none'} />
-                </button>
-                <button
-                  className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
-                  onClick={() => deleteTask(task.id)}
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
             );
           })}

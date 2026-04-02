@@ -61,15 +61,15 @@ export default function Miracle21() {
   }
 
   return (
-    <div className="flex gap-4 fade-in" style={{ minHeight: 'calc(100vh - 160px)' }}>
+    <div className="flex flex-col md:flex-row gap-4 fade-in" style={{ minHeight: 'calc(100vh - 160px)' }}>
       {/* ── Sidebar ── */}
       <div
-        className="w-56 flex-shrink-0 rounded-xl p-3 flex flex-col gap-2"
+        className="md:w-56 md:flex-shrink-0 rounded-xl p-3 flex md:flex-col flex-row gap-2 overflow-x-auto"
         style={{ background: '#0f0f1a' }}
       >
         {/* New habit button */}
         <button
-          className="w-full text-center py-2 rounded-lg text-xs border border-dashed transition-colors"
+          className="flex-shrink-0 md:w-full text-center py-2 px-3 rounded-lg text-xs border border-dashed transition-colors"
           style={{ borderColor: '#3f3f5a', color: '#94a3b8' }}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#f97316')}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#3f3f5a')}
@@ -84,7 +84,7 @@ export default function Miracle21() {
           return (
             <button
               key={h.id}
-              className="w-full text-left px-3 py-2.5 rounded-lg transition-all"
+              className="flex-shrink-0 md:w-full text-left px-3 py-2.5 rounded-lg transition-all"
               style={{
                 background: isSelected ? '#1c1c2e' : 'transparent',
                 borderLeft: isSelected ? '3px solid #f97316' : '3px solid transparent',
@@ -406,10 +406,7 @@ function StepCard({
       {!collapsed && (
         <div className="p-4 space-y-4">
           {/* 21-day grid */}
-          <div
-            className="grid gap-2"
-            style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}
-          >
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
             {step.days.map((dayEntry, dayIdx) => {
               const dateStr = getDayDate(step.startDate, dayIdx);
               const isToday = dateStr === today;
