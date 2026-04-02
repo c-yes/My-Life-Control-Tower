@@ -303,6 +303,8 @@ function StepCard({
 }) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalDraft, setGoalDraft] = useState(step.goal);
+  const [editingDate, setEditingDate] = useState(false);
+  const [dateDraft, setDateDraft] = useState(step.startDate);
   const [editingDay, setEditingDay] = useState<number | null>(null);
   const [dayNoteDraft, setDayNoteDraft] = useState('');
   const [collapsed, setCollapsed] = useState(!isLast);
@@ -391,6 +393,45 @@ function StepCard({
             style={{ width: '40%', background: '#f97316' }}
           />
         </div>
+
+        {/* Start date */}
+        {editingDate ? (
+          <input
+            type="date"
+            autoFocus
+            className="text-xs rounded px-1 py-0.5 outline-none border flex-shrink-0"
+            style={{ background: '#1c1c2e', borderColor: '#f97316', color: '#f97316' }}
+            value={dateDraft}
+            onChange={(e) => setDateDraft(e.target.value)}
+            onBlur={() => {
+              if (dateDraft) onChange({ startDate: dateDraft });
+              setEditingDate(false);
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') {
+                if (dateDraft) onChange({ startDate: dateDraft });
+                setEditingDate(false);
+              }
+              if (e.key === 'Escape') setEditingDate(false);
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className="text-xs flex-shrink-0 cursor-pointer hover:underline"
+            style={{ color: '#64748b' }}
+            title="클릭하여 시작일 수정"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDateDraft(step.startDate);
+              setEditingDate(true);
+              if (collapsed) setCollapsed(false);
+            }}
+          >
+            {step.startDate}
+          </span>
+        )}
 
         {/* Progress */}
         <span className="text-xs flex-shrink-0" style={{ color: '#f97316' }}>
