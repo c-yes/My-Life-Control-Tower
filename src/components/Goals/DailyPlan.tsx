@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
 import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS, getCurrentYear, getCurrentWeek } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
 
 const emptyPlan = (date: string): DailyPlanData => ({
   date,
@@ -86,6 +86,15 @@ export default function DailyPlan() {
 
   function deleteTask(id: string) {
     save({ ...plan, tasks: plan.tasks.filter((t) => t.id !== id) });
+  }
+
+  function moveTask(id: string, direction: 'up' | 'down') {
+    const idx = plan.tasks.findIndex((t) => t.id === id);
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= plan.tasks.length) return;
+    const tasks = [...plan.tasks];
+    [tasks[idx], tasks[newIdx]] = [tasks[newIdx], tasks[idx]];
+    save({ ...plan, tasks });
   }
 
   function startEditTask(task: DailyTask) {
@@ -292,16 +301,33 @@ export default function DailyPlan() {
         </div>
 
         <div className="space-y-2 mb-4">
-          {plan.tasks.map((task) => {
+          {plan.tasks.map((task, idx) => {
             const cfg = task.domain ? DOMAIN_CONFIG[task.domain] : null;
             const isPinned = plan.topPriorities.includes(task.title);
             return (
               <div
                 key={task.id}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                className={`group flex items-center gap-2 p-3 rounded-lg border ${
                   task.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
                 }`}
               >
+                {/* 순서 변경 */}
+                <div className="hidden md:flex flex-col flex-shrink-0">
+                  <button
+                    className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+                    disabled={idx === 0}
+                    onClick={() => moveTask(task.id, 'up')}
+                  >
+                    <ChevronUp size={12} />
+                  </button>
+                  <button
+                    className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+                    disabled={idx === plan.tasks.length - 1}
+                    onClick={() => moveTask(task.id, 'down')}
+                  >
+                    <ChevronDown size={12} />
+                  </button>
+                </div>
                 <input
                   type="checkbox"
                   checked={task.completed}

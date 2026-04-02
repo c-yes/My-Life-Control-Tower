@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { DOMAIN_CONFIG } from '../../types';
+import { DOMAIN_CONFIG, TRACKER_DOMAINS } from '../../types';
 import {
   getTodayString,
   getCurrentYear,
@@ -9,6 +9,7 @@ import {
   formatDateDisplay,
   calculateStreak,
 } from '../../utils/helpers';
+import { startOfWeek, addDays, format } from 'date-fns';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function Dashboard() {
     annualGoals,
     monthlyGoals,
     weeklyTasks,
-    domainScores,
+    domainEntries,
     lifeCompass,
   } = useStore();
 
@@ -40,10 +41,20 @@ export default function Dashboard() {
 
   const thisYearGoals = annualGoals.filter((g) => g.year === year);
 
-  const avgDomainScore =
-    domainScores.length > 0
-      ? Math.round(domainScores.reduce((acc, ds) => acc + ds.score, 0) / domainScores.length * 10) / 10
-      : 0;
+  // Domain activity: count days this week each domain has an entry
+  const weekMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const thisWeekDates = Array.from({ length: 7 }, (_, i) =>
+    format(addDays(weekMonday, i), 'yyyy-MM-dd')
+  );
+  const domainActivity = TRACKER_DOMAINS.map((domain) => ({
+    domain,
+    count: thisWeekDates.filter((d) =>
+      domainEntries.some((e) => e.date === d && e.domain === domain && e.note.trim())
+    ).length,
+  }));
+  const avgDomainActivity = domainActivity.length > 0
+    ? Math.round(domainActivity.reduce((s, d) => s + d.count, 0) / domainActivity.length * 10) / 10
+    : 0;
 
   const bestHabitStreak = habits.reduce((max, h) => {
     const streak = calculateStreak(h.completions, h.startDate);
@@ -96,27 +107,28 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Domain Scores */}
+      {/* Domain Activity (this week) */}
       <div className="card">
-        <h3 className="font-bold text-slate-900 mb-4">Life Domains (avg: {avgDomainScore}/10)</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {domainScores.map((ds) => {
-            const cfg = DOMAIN_CONFIG[ds.domain];
+        <h3 className="font-bold text-slate-900 mb-4">
+          이번 주 Domain 활동 (평균 {avgDomainActivity}/7일)
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          {domainActivity.map(({ domain, count }) => {
+            const cfg = DOMAIN_CONFIG[domain];
             return (
               <div
-                key={ds.domain}
+                key={domain}
                 className="flex flex-col items-center p-3 rounded-xl border border-slate-100 cursor-pointer hover:shadow-md transition-shadow"
                 style={{ background: `${cfg.color}10` }}
                 onClick={() => navigate('/domain-tracker')}
               >
-                <span className="text-xs font-medium text-slate-600">{cfg.label}</span>
-                <span className="text-lg font-bold mt-1" style={{ color: cfg.color }}>
-                  {ds.score}
-                </span>
+                <span className="text-xs font-medium text-slate-600 text-center">{cfg.label}</span>
+                <span className="text-2xl font-bold mt-1" style={{ color: cfg.color }}>{count}</span>
+                <span className="text-xs text-slate-400">/ 7일</span>
                 <div className="w-full mt-2 progress-bar" style={{ background: `${cfg.color}20` }}>
                   <div
                     className="progress-fill"
-                    style={{ width: `${ds.score * 10}%`, background: cfg.color }}
+                    style={{ width: `${(count / 7) * 100}%`, background: cfg.color }}
                   />
                 </div>
               </div>
