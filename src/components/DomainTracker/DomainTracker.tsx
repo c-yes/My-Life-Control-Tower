@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, TRACKER_DOMAINS } from '../../types';
 import { format, startOfWeek, addDays } from 'date-fns';
@@ -14,38 +14,17 @@ function getWeekDates(base: Date): Date[] {
 }
 
 export default function DomainTracker() {
-  const { domainEntries, upsertDomainEntry } = useStore();
-  const [weekOffset, setWeekOffset] = useState(0); // 0 = current week
+  const { dailyPlans } = useStore();
+  const [weekOffset, setWeekOffset] = useState(0);
   const [visibleDomains, setVisibleDomains] = useState<Set<Domain>>(new Set(DOMAINS));
-  const [editingCell, setEditingCell] = useState<{ date: string; domain: Domain } | null>(null);
-  const [draftNote, setDraftNote] = useState('');
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const baseDate = addDays(new Date(), weekOffset * 7);
   const weekDates = getWeekDates(baseDate);
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editingCell]);
-
-  function getEntry(date: string, domain: Domain) {
-    return domainEntries.find((e) => e.date === date && e.domain === domain);
-  }
-
-  function openEdit(date: string, domain: Domain) {
-    const entry = getEntry(date, domain);
-    setDraftNote(entry?.note ?? '');
-    setEditingCell({ date, domain });
-  }
-
-  function commitEdit() {
-    if (!editingCell) return;
-    upsertDomainEntry(editingCell.date, editingCell.domain, draftNote);
-    setEditingCell(null);
-    setDraftNote('');
+  function getTasksForCell(dateStr: string, domain: Domain) {
+    const plan = dailyPlans.find((p) => p.date === dateStr);
+    return (plan?.tasks ?? []).filter((t) => t.domain === domain);
   }
 
   function toggleDomain(domain: Domain) {
@@ -60,23 +39,23 @@ export default function DomainTracker() {
     });
   }
 
-  const shownDomains = DOMAINS.filter((d) => visibleDomains.has(d));
-
-  // Weekly completion per domain = number of days that have a non-empty entry
-  function weeklyCount(domain: Domain) {
-    return weekDates.filter((d) => {
-      const dateStr = format(d, 'yyyy-MM-dd');
-      const entry = getEntry(dateStr, domain);
-      return entry && entry.note.trim();
-    }).length;
+  // Weekly summary: completed tasks per domain
+  function weeklyStats(domain: Domain) {
+    let total = 0, completed = 0;
+    weekDates.forEach((d) => {
+      const tasks = getTasksForCell(format(d, 'yyyy-MM-dd'), domain);
+      total += tasks.length;
+      completed += tasks.filter((t) => t.completed).length;
+    });
+    return { total, completed };
   }
 
+  const shownDomains = DOMAINS.filter((d) => visibleDomains.has(d));
+
   const weekLabel = (() => {
-    const start = weekDates[0];
-    const end = weekDates[6];
     if (weekOffset === 0) return 'This Week';
     if (weekOffset === -1) return 'Last Week';
-    return `${format(start, 'M.d')} — ${format(end, 'M.d')}`;
+    return `${format(weekDates[0], 'M.d')} — ${format(weekDates[6], 'M.d')}`;
   })();
 
   return (
@@ -97,10 +76,7 @@ export default function DomainTracker() {
                 color: active ? cfg.color : '#94a3b8',
               }}
             >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ background: active ? cfg.color : '#cbd5e1' }}
-              />
+              <span className="w-2 h-2 rounded-full" style={{ background: active ? cfg.color : '#cbd5e1' }} />
               <span className="font-bold text-sm">{cfg.label}</span>
             </button>
           );
@@ -115,24 +91,16 @@ export default function DomainTracker() {
         >
           <ChevronLeft size={18} className="text-slate-500" />
         </button>
-        <span className="text-sm font-semibold text-slate-700 min-w-24 text-center">
-          {weekLabel}
-        </span>
+        <span className="text-sm font-semibold text-slate-700 min-w-24 text-center">{weekLabel}</span>
         <button
           className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
           onClick={() => setWeekOffset((w) => w + 1)}
           disabled={weekOffset >= 0}
         >
-          <ChevronRight
-            size={18}
-            className={weekOffset >= 0 ? 'text-slate-200' : 'text-slate-500'}
-          />
+          <ChevronRight size={18} className={weekOffset >= 0 ? 'text-slate-200' : 'text-slate-500'} />
         </button>
         {weekOffset !== 0 && (
-          <button
-            className="text-xs text-indigo-500 hover:underline"
-            onClick={() => setWeekOffset(0)}
-          >
+          <button className="text-xs text-indigo-500 hover:underline" onClick={() => setWeekOffset(0)}>
             This Week
           </button>
         )}
@@ -148,10 +116,7 @@ export default function DomainTracker() {
                 const cfg = DOMAIN_CONFIG[domain];
                 return (
                   <th key={domain} className="py-3 px-3 text-center min-w-36">
-                    <div
-                      className="font-bold text-sm tracking-wide"
-                      style={{ color: cfg.color, fontFamily: 'monospace' }}
-                    >
+                    <div className="font-bold text-sm tracking-wide" style={{ color: cfg.color, fontFamily: 'monospace' }}>
                       {cfg.label}
                     </div>
                   </th>
@@ -169,16 +134,10 @@ export default function DomainTracker() {
               return (
                 <tr
                   key={dateStr}
-                  style={{
-                    background: isToday ? '#fffbf5' : dayIdx % 2 === 0 ? '#fafafa' : '#fff',
-                  }}
+                  style={{ background: isToday ? '#fffbf5' : dayIdx % 2 === 0 ? '#fafafa' : '#fff' }}
                 >
-                  {/* Day column */}
                   <td className="py-3 px-3 border-r border-slate-100">
-                    <div
-                      className="font-bold text-sm"
-                      style={{ color: isToday ? '#f97316' : '#475569' }}
-                    >
+                    <div className="font-bold text-sm" style={{ color: isToday ? '#f97316' : '#475569' }}>
                       {dayLabel}
                     </div>
                     <div className="text-xs text-slate-400">{dateLabel}</div>
@@ -186,10 +145,8 @@ export default function DomainTracker() {
 
                   {shownDomains.map((domain) => {
                     const cfg = DOMAIN_CONFIG[domain];
-                    const entry = getEntry(dateStr, domain);
-                    const isEditing =
-                      editingCell?.date === dateStr && editingCell?.domain === domain;
-                    const isFuture = dateStr > today;
+                    const tasks = getTasksForCell(dateStr, domain);
+                    const completedCount = tasks.filter((t) => t.completed).length;
 
                     return (
                       <td
@@ -197,32 +154,23 @@ export default function DomainTracker() {
                         className="py-2 px-3 border-r border-slate-100 align-top"
                         style={{ borderLeft: `2px solid ${cfg.color}30` }}
                       >
-                        {isEditing ? (
-                          <textarea
-                            ref={inputRef}
-                            className="w-full text-xs resize-none rounded border border-slate-200 p-1.5 focus:outline-none focus:ring-1"
-                            style={{ minHeight: 64, '--tw-ring-color': cfg.color } as React.CSSProperties}
-                            value={draftNote}
-                            onChange={(e) => setDraftNote(e.target.value)}
-                            onBlur={commitEdit}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Escape') {
-                                setEditingCell(null);
-                                setDraftNote('');
-                              }
-                            }}
-                            placeholder="내용 입력..."
-                          />
+                        {tasks.length === 0 ? (
+                          <span className="text-xs text-slate-300">—</span>
                         ) : (
-                          <div
-                            className="text-xs min-h-10 rounded px-1 py-0.5 cursor-text"
-                            style={{
-                              color: entry?.note ? '#334155' : '#cbd5e1',
-                              cursor: isFuture ? 'not-allowed' : 'text',
-                            }}
-                            onClick={() => !isFuture && openEdit(dateStr, domain)}
-                          >
-                            {entry?.note || '—'}
+                          <div className="space-y-1">
+                            <div className="text-xs font-medium" style={{ color: cfg.color }}>
+                              {completedCount}/{tasks.length}
+                            </div>
+                            {tasks.map((t) => (
+                              <div
+                                key={t.id}
+                                className={`text-xs leading-snug ${
+                                  t.completed ? 'line-through text-slate-400' : 'text-slate-600'
+                                }`}
+                              >
+                                {t.title}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </td>
@@ -235,41 +183,30 @@ export default function DomainTracker() {
         </table>
       </div>
 
-      {/* Weekly completion summary */}
+      {/* Weekly summary */}
       <div>
         <h3 className="text-sm font-semibold text-slate-600 mb-3">Weekly Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {shownDomains.map((domain) => {
             const cfg = DOMAIN_CONFIG[domain];
-            const count = weeklyCount(domain);
+            const { total, completed } = weeklyStats(domain);
+            const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
             return (
               <div
                 key={domain}
                 className="rounded-xl p-4 border"
-                style={{
-                  background: '#0f0f1a',
-                  borderColor: `${cfg.color}30`,
-                }}
+                style={{ background: '#0f0f1a', borderColor: `${cfg.color}30` }}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="text-lg font-bold"
-                    style={{ color: cfg.color, fontFamily: 'monospace' }}
-                  >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-bold text-sm" style={{ color: cfg.color, fontFamily: 'monospace' }}>
                     {cfg.label}
                   </div>
-                  <div
-                    className="text-2xl font-bold"
-                    style={{ color: cfg.color, fontFamily: 'monospace' }}
-                  >
-                    {count}
-                  </div>
+                  <div className="text-xs text-slate-400">{completed}/{total}</div>
                 </div>
-                {/* Mini progress bar */}
                 <div className="mt-2 h-1 rounded-full bg-slate-800 overflow-hidden">
                   <div
                     className="h-1 rounded-full transition-all"
-                    style={{ width: `${(count / 7) * 100}%`, background: cfg.color }}
+                    style={{ width: `${pct}%`, background: cfg.color }}
                   />
                 </div>
               </div>

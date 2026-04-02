@@ -19,7 +19,6 @@ export default function Dashboard() {
     annualGoals,
     monthlyGoals,
     weeklyTasks,
-    domainEntries,
     lifeCompass,
   } = useStore();
 
@@ -41,20 +40,16 @@ export default function Dashboard() {
 
   const thisYearGoals = annualGoals.filter((g) => g.year === year);
 
-  // Domain activity: count days this week each domain has an entry
+  // Domain activity: this week's completed/total tasks per domain from Daily Plans
   const weekMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
   const thisWeekDates = Array.from({ length: 7 }, (_, i) =>
     format(addDays(weekMonday, i), 'yyyy-MM-dd')
   );
-  const domainActivity = TRACKER_DOMAINS.map((domain) => ({
-    domain,
-    count: thisWeekDates.filter((d) =>
-      domainEntries.some((e) => e.date === d && e.domain === domain && e.note.trim())
-    ).length,
-  }));
-  const avgDomainActivity = domainActivity.length > 0
-    ? Math.round(domainActivity.reduce((s, d) => s + d.count, 0) / domainActivity.length * 10) / 10
-    : 0;
+  const thisWeekPlans = dailyPlans.filter((p) => thisWeekDates.includes(p.date));
+  const domainActivity = TRACKER_DOMAINS.map((domain) => {
+    const tasks = thisWeekPlans.flatMap((p) => p.tasks.filter((t) => t.domain === domain));
+    return { domain, total: tasks.length, completed: tasks.filter((t) => t.completed).length };
+  });
 
   const bestHabitStreak = habits.reduce((max, h) => {
     const streak = calculateStreak(h.completions, h.startDate);
@@ -107,14 +102,13 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Domain Activity (this week) */}
+      {/* Domain Activity (this week from Daily tasks) */}
       <div className="card">
-        <h3 className="font-bold text-slate-900 mb-4">
-          이번 주 Domain 활동 (평균 {avgDomainActivity}/7일)
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-          {domainActivity.map(({ domain, count }) => {
+        <h3 className="font-bold text-slate-900 mb-4">이번 주 Domain Tasks</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {domainActivity.map(({ domain, total, completed }) => {
             const cfg = DOMAIN_CONFIG[domain];
+            const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
             return (
               <div
                 key={domain}
@@ -123,13 +117,12 @@ export default function Dashboard() {
                 onClick={() => navigate('/domain-tracker')}
               >
                 <span className="text-xs font-medium text-slate-600 text-center">{cfg.label}</span>
-                <span className="text-2xl font-bold mt-1" style={{ color: cfg.color }}>{count}</span>
-                <span className="text-xs text-slate-400">/ 7일</span>
+                <span className="text-2xl font-bold mt-1" style={{ color: cfg.color }}>
+                  {total > 0 ? `${completed}/${total}` : '—'}
+                </span>
+                <span className="text-xs text-slate-400">{total > 0 ? `${pct}%` : '기록 없음'}</span>
                 <div className="w-full mt-2 progress-bar" style={{ background: `${cfg.color}20` }}>
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${(count / 7) * 100}%`, background: cfg.color }}
-                  />
+                  <div className="progress-fill" style={{ width: `${pct}%`, background: cfg.color }} />
                 </div>
               </div>
             );
