@@ -73,6 +73,9 @@ export default function Miracle21() {
         {miracle21Habits.map((h) => {
           const stepIdx = activeStepIdx(h);
           const isSelected = selectedId === h.id;
+          const currentStep = h.steps[stepIdx];
+          const done = currentStep.days.filter((d) => d.completed).length;
+          const pct = Math.round((done / 21) * 100);
           return (
             <button
               key={h.id}
@@ -86,8 +89,17 @@ export default function Miracle21() {
               <div className="text-sm font-semibold truncate" style={{ color: isSelected ? '#ea580c' : '#334155' }}>
                 {h.name}
               </div>
-              <div className="text-xs mt-0.5 text-slate-400">
-                Step {stepIdx + 1}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-xs text-slate-400">S{stepIdx + 1}</span>
+                <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-orange-400 transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium" style={{ color: isSelected ? '#ea580c' : '#94a3b8' }}>
+                  {done}/21
+                </span>
               </div>
             </button>
           );
