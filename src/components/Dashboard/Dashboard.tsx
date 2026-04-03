@@ -157,38 +157,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Annual Goals Summary */}
-      {thisYearGoals.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-slate-900">Annual {year}</h3>
-            <button className="btn-secondary text-xs" onClick={() => navigate('/annual-goals')}>
-              View All →
-            </button>
-          </div>
-          <div className="space-y-3">
-            {thisYearGoals.slice(0, 4).map((goal) => {
-              const cfg = DOMAIN_CONFIG[goal.domain];
-              return (
-                <div key={goal.id} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-slate-700 truncate">{goal.title}</span>
-                      <span className="text-xs text-slate-500 ml-2">{goal.progress}%</span>
-                    </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${goal.progress}%`, background: cfg.color }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
