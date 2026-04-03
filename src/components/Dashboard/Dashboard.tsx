@@ -16,6 +16,7 @@ export default function Dashboard() {
   const {
     dailyPlans,
     habits,
+    miracle21Habits,
     annualGoals,
     monthlyGoals,
     weeklyTasks,
@@ -56,6 +57,31 @@ export default function Dashboard() {
     return streak > max ? streak : max;
   }, 0);
 
+  // Miracle21 streak: longest consecutive completed days (today backwards) across all habits/steps
+  const bestMiracle21Streak = miracle21Habits.reduce((max, habit) => {
+    // Build a set of all completed dates across all steps
+    const completedDates = new Set<string>();
+    habit.steps.forEach((step) => {
+      step.days.forEach((day, idx) => {
+        if (day.completed) {
+          const d = new Date(step.startDate + 'T12:00:00');
+          d.setDate(d.getDate() + idx);
+          completedDates.add(format(d, 'yyyy-MM-dd'));
+        }
+      });
+    });
+    // Count consecutive days from today backwards
+    let streak = 0;
+    const cur = new Date(today + 'T12:00:00');
+    while (completedDates.has(format(cur, 'yyyy-MM-dd'))) {
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return streak > max ? streak : max;
+  }, 0);
+
+  const bestStreak = Math.max(bestHabitStreak, bestMiracle21Streak);
+
   return (
     <div className="space-y-6 fade-in">
       {/* Date & Affirmation */}
@@ -95,7 +121,7 @@ export default function Dashboard() {
         />
         <StatCard
           label="Best Streak"
-          value={`${bestHabitStreak}`}
+          value={`${bestStreak}`}
           sub="days in a row"
           color="#f97316"
           onClick={() => navigate('/miracle21')}
@@ -104,7 +130,7 @@ export default function Dashboard() {
 
       {/* Domain Activity (this week from Daily tasks) */}
       <div className="card">
-        <h3 className="font-bold text-slate-900 mb-4">이번 주 Domain Tasks</h3>
+        <h3 className="font-bold text-slate-900 mb-4">This Week's Domain Tasks</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {domainActivity.map(({ domain, total, completed }) => {
             const cfg = DOMAIN_CONFIG[domain];
