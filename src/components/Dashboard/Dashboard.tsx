@@ -40,6 +40,7 @@ export default function Dashboard() {
   const completedWeekTasks = thisWeekTasks.filter((t) => t.completed).length;
 
   const thisYearGoals = annualGoals.filter((g) => g.year === year);
+  const completedAnnualGoals = thisYearGoals.filter((g) => g.progress >= 100).length;
 
   // Domain activity: this week's completed/total tasks per domain from Daily Plans
   const weekMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -99,32 +100,32 @@ export default function Dashboard() {
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label="Today's Tasks"
+          label="Today"
           value={`${completedToday}/${todayTasks.length}`}
           sub={`${taskCompletionPct}% done`}
           color="#ec4899"
           onClick={() => navigate('/daily-plan')}
         />
         <StatCard
-          label="This Week"
+          label="Weekly"
           value={`${completedWeekTasks}/${thisWeekTasks.length}`}
           sub="tasks completed"
           color="#3b82f6"
           onClick={() => navigate('/weekly-plan')}
         />
         <StatCard
-          label="Monthly Goals"
+          label="Monthly"
           value={`${completedMonthGoals}/${thisMonthGoals.length}`}
           sub="goals achieved"
           color="#10b981"
           onClick={() => navigate('/monthly-plan')}
         />
         <StatCard
-          label="Best Streak"
-          value={`${bestStreak}`}
-          sub="days in a row"
+          label="Annual"
+          value={`${completedAnnualGoals}/${thisYearGoals.length}`}
+          sub="goals achieved"
           color="#f97316"
-          onClick={() => navigate('/miracle21')}
+          onClick={() => navigate('/annual-goals')}
         />
       </div>
 
