@@ -17,7 +17,7 @@ function getTextColor(hex: string): string {
 const START_HOUR = 5;
 const END_HOUR = 23;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const SLOT_HEIGHT = 56; // px per hour
+const SLOT_HEIGHT = 120; // px per hour — 30px per 15-min slot
 
 const BLOCK_COLORS: { label: string; color: string }[] = [
   { label: 'Indigo', color: '#6366f1' },
@@ -126,7 +126,7 @@ export default function TimeBlock() {
 
   function blockHeight(block: TimeBlockData): number {
     const duration = (block.endHour - block.startHour) + (block.endMinute - block.startMinute) / 60;
-    return Math.max(duration * SLOT_HEIGHT, 20);
+    return Math.max(duration * SLOT_HEIGHT, SLOT_HEIGHT / 4 - 2); // min = 15-min slot
   }
 
   function formatTime(hour: number, minute: number): string {
@@ -187,10 +187,19 @@ export default function TimeBlock() {
                     </span>
                   </div>
                   <div
-                    className="flex-1 border-t border-slate-100 cursor-pointer hover:bg-indigo-50 transition-colors"
+                    className="flex-1 border-t border-slate-200 cursor-pointer hover:bg-indigo-50 transition-colors relative"
                     style={{ height: SLOT_HEIGHT }}
                     onClick={() => openAddForm(hour)}
-                  />
+                  >
+                    {/* 15-min tick marks */}
+                    {[1, 2, 3].map((q) => (
+                      <div
+                        key={q}
+                        className="absolute left-0 right-0 border-t border-dashed border-slate-100"
+                        style={{ top: (SLOT_HEIGHT / 4) * q }}
+                      />
+                    ))}
+                  </div>
                   {showMemos && (
                     <div
                       className="w-44 flex-shrink-0 border-t border-l border-slate-100 flex items-center px-2"
