@@ -110,7 +110,6 @@ export default function Miracle21() {
       <div className="flex-1 min-w-0">
         {showCreate && (
           <div className="card mb-4">
-            <h3 className="font-semibold text-slate-800 mb-3">새 습관 만들기</h3>
             <div className="flex gap-2">
               <input
                 className="input flex-1"

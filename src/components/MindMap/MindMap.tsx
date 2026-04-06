@@ -40,7 +40,6 @@ export default function MindMap() {
 
       {creating && (
         <div className="card">
-          <h3 className="font-semibold text-slate-800 mb-3">새 마인드맵 만들기</h3>
           <div className="flex gap-2">
             <input
               className="input flex-1"

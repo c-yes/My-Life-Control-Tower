@@ -67,7 +67,6 @@ export default function WannabeList() {
       {/* Add Form */}
       {showAddForm && (
         <div className="card">
-          <h3 className="font-bold text-slate-800 mb-4">새 Wannabe 추가</h3>
           <div className="space-y-3">
             <input
               className="input"
