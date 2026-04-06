@@ -19,10 +19,16 @@ export interface CoreValue {
   description: string;
 }
 
+export interface LifeRoleItem {
+  id: string;
+  text: string;
+}
+
 export interface LifeRole {
   id: string;
   name: string;
   description: string;
+  items: LifeRoleItem[];
 }
 
 export interface LifeCompassData {
