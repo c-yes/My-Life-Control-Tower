@@ -174,10 +174,10 @@ export default function DailyPlan() {
 
       {/* Daily Affirmation */}
       <div className="card">
-        <h3 className="font-bold text-slate-800 mb-2">오늘의 다짐 / 명언</h3>
+        <h3 className="font-bold text-slate-800 mb-2">Affirmation / Quote</h3>
         <input
           className="input w-full"
-          placeholder="오늘의 다짐이나 명언을 적어보세요..."
+          placeholder="Write today's affirmation or quote..."
           value={plan.affirmation ?? ''}
           onChange={(e) => save({ ...plan, affirmation: e.target.value })}
         />
