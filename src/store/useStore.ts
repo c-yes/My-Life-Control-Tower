@@ -121,6 +121,7 @@ const defaultLifeCompass: LifeCompassData = {
   vision: '',
   coreValues: [],
   principles: [],
+  roles: [],
 };
 
 const defaultDomainScores: DomainScore[] = [

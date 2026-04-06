@@ -19,11 +19,18 @@ export interface CoreValue {
   description: string;
 }
 
+export interface LifeRole {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface LifeCompassData {
   mission: string;
   vision: string;
   coreValues: CoreValue[];
   principles: string[];
+  roles: LifeRole[];
 }
 
 export interface AnnualGoal {
