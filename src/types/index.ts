@@ -19,9 +19,15 @@ export interface CoreValue {
   description: string;
 }
 
+export interface LifeRoleSubItem {
+  id: string;
+  text: string;
+}
+
 export interface LifeRoleItem {
   id: string;
   text: string;
+  subItems: LifeRoleSubItem[];
 }
 
 export interface LifeRole {

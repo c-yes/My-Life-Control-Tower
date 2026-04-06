@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { LifeRole, LifeRoleItem } from '../../types';
+import { LifeRole, LifeRoleItem, LifeRoleSubItem } from '../../types';
 import { generateId } from '../../utils/helpers';
 import { Plus, Trash2, Edit2, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
 
@@ -347,7 +347,7 @@ function RoleCard({
 
   function addItem() {
     if (!newItemText.trim()) return;
-    onUpdate({ items: [...items, { id: generateId(), text: newItemText.trim() }] });
+    onUpdate({ items: [...items, { id: generateId(), text: newItemText.trim(), subItems: [] }] });
     setNewItemText(''); setAddingItem(false);
   }
 
@@ -371,6 +371,10 @@ function RoleCard({
     if (swap < 0 || swap >= next.length) return;
     [next[itemIdx], next[swap]] = [next[swap], next[itemIdx]];
     onUpdate({ items: next });
+  }
+
+  function updateItem(itemId: string, updates: Partial<LifeRoleItem>) {
+    onUpdate({ items: items.map((i) => (i.id === itemId ? { ...i, ...updates } : i)) });
   }
 
   return (
@@ -414,44 +418,30 @@ function RoleCard({
         )}
       </div>
 
-      {/* Sub-items */}
+      {/* Items */}
       {!editing && (
-        <div className="px-3 pb-3 pl-11">
-          <div className="space-y-1">
-            {items.map((item, itemIdx) => (
-              <div key={item.id} className="flex items-center gap-1.5 group">
-                {/* item reorder */}
-                <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-0.5 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                    disabled={itemIdx === 0} onClick={() => moveItem(itemIdx, -1)}><ChevronUp size={11} /></button>
-                  <button className="p-0.5 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                    disabled={itemIdx === items.length - 1} onClick={() => moveItem(itemIdx, 1)}><ChevronDown size={11} /></button>
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0" />
-                {editingItemId === item.id ? (
-                  <div className="flex flex-1 gap-1">
-                    <input className="input flex-1 text-sm py-0.5" value={editItemText}
-                      onChange={(e) => setEditItemText(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null); }}
-                      autoFocus />
-                    <button className="p-1 rounded hover:bg-green-50 text-green-600" onClick={saveEditItem}><Check size={13} /></button>
-                    <button className="p-1 rounded hover:bg-slate-100 text-slate-400" onClick={() => setEditingItemId(null)}><X size={13} /></button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="flex-1 text-sm text-slate-700">{item.text}</span>
-                    <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-opacity"
-                      onClick={() => startEditItem(item)}><Edit2 size={11} /></button>
-                    <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-opacity"
-                      onClick={() => deleteItem(item.id)}><Trash2 size={11} /></button>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="px-3 pb-3 pl-11 space-y-1">
+          {items.map((item, itemIdx) => (
+            <RoleItemRow
+              key={item.id}
+              item={item}
+              itemIdx={itemIdx}
+              total={items.length}
+              editing={editingItemId === item.id}
+              editText={editItemText}
+              setEditText={setEditItemText}
+              onMoveUp={() => moveItem(itemIdx, -1)}
+              onMoveDown={() => moveItem(itemIdx, 1)}
+              onStartEdit={() => startEditItem(item)}
+              onSaveEdit={saveEditItem}
+              onCancelEdit={() => setEditingItemId(null)}
+              onDelete={() => deleteItem(item.id)}
+              onUpdateSubItems={(subItems) => updateItem(item.id, { subItems })}
+            />
+          ))}
 
           {addingItem ? (
-            <div className="flex gap-1 mt-2">
+            <div className="flex gap-1 mt-1">
               <input className="input flex-1 text-sm" placeholder="항목 입력..." value={newItemText}
                 onChange={(e) => setNewItemText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') addItem(); if (e.key === 'Escape') setAddingItem(false); }}
@@ -461,10 +451,146 @@ function RoleCard({
             </div>
           ) : (
             <button
-              className="mt-1.5 flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-600 transition-colors"
+              className="mt-1 flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-600 transition-colors"
               onClick={() => setAddingItem(true)}
             >
               <Plus size={11} /> 항목 추가
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RoleItemRow — each item with its own sub-items
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RoleItemRow({
+  item, itemIdx, total, editing, editText, setEditText,
+  onMoveUp, onMoveDown, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onUpdateSubItems,
+}: {
+  item: LifeRoleItem; itemIdx: number; total: number; editing: boolean;
+  editText: string; setEditText: (v: string) => void;
+  onMoveUp: () => void; onMoveDown: () => void;
+  onStartEdit: () => void; onSaveEdit: () => void; onCancelEdit: () => void;
+  onDelete: () => void; onUpdateSubItems: (subItems: LifeRoleSubItem[]) => void;
+}) {
+  const [addingSubItem, setAddingSubItem] = useState(false);
+  const [newSubText, setNewSubText] = useState('');
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editSubText, setEditSubText] = useState('');
+
+  const subItems: LifeRoleSubItem[] = item.subItems ?? [];
+
+  function addSubItem() {
+    if (!newSubText.trim()) return;
+    onUpdateSubItems([...subItems, { id: generateId(), text: newSubText.trim() }]);
+    setNewSubText(''); setAddingSubItem(false);
+  }
+
+  function deleteSubItem(id: string) {
+    onUpdateSubItems(subItems.filter((s) => s.id !== id));
+  }
+
+  function startEditSubItem(sub: LifeRoleSubItem) {
+    setEditingSubId(sub.id); setEditSubText(sub.text);
+  }
+
+  function saveEditSubItem() {
+    if (!editingSubId || !editSubText.trim()) return;
+    onUpdateSubItems(subItems.map((s) => (s.id === editingSubId ? { ...s, text: editSubText.trim() } : s)));
+    setEditingSubId(null);
+  }
+
+  function moveSubItem(subIdx: number, dir: -1 | 1) {
+    const next = [...subItems];
+    const swap = subIdx + dir;
+    if (swap < 0 || swap >= next.length) return;
+    [next[subIdx], next[swap]] = [next[swap], next[subIdx]];
+    onUpdateSubItems(next);
+  }
+
+  return (
+    <div>
+      {/* Item row */}
+      <div className="flex items-center gap-1.5 group">
+        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+          <button className="p-0.5 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+            disabled={itemIdx === 0} onClick={onMoveUp}><ChevronUp size={11} /></button>
+          <button className="p-0.5 text-slate-300 hover:text-slate-500 disabled:opacity-20"
+            disabled={itemIdx === total - 1} onClick={onMoveDown}><ChevronDown size={11} /></button>
+        </div>
+        <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0" />
+        {editing ? (
+          <div className="flex flex-1 gap-1">
+            <input className="input flex-1 text-sm py-0.5" value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit(); if (e.key === 'Escape') onCancelEdit(); }}
+              autoFocus />
+            <button className="p-1 rounded hover:bg-green-50 text-green-600" onClick={onSaveEdit}><Check size={13} /></button>
+            <button className="p-1 rounded hover:bg-slate-100 text-slate-400" onClick={onCancelEdit}><X size={13} /></button>
+          </div>
+        ) : (
+          <>
+            <span className="flex-1 text-sm text-slate-700">{item.text}</span>
+            <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-opacity"
+              onClick={onStartEdit}><Edit2 size={11} /></button>
+            <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-opacity"
+              onClick={onDelete}><Trash2 size={11} /></button>
+          </>
+        )}
+      </div>
+
+      {/* Sub-items (2nd level) */}
+      {!editing && (
+        <div className="ml-7 mt-0.5 space-y-0.5">
+          {subItems.map((sub, subIdx) => (
+            <div key={sub.id} className="flex items-center gap-1.5 group/sub">
+              <div className="flex flex-col opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                <button className="p-0.5 text-slate-200 hover:text-slate-400 disabled:opacity-20"
+                  disabled={subIdx === 0} onClick={() => moveSubItem(subIdx, -1)}><ChevronUp size={10} /></button>
+                <button className="p-0.5 text-slate-200 hover:text-slate-400 disabled:opacity-20"
+                  disabled={subIdx === subItems.length - 1} onClick={() => moveSubItem(subIdx, 1)}><ChevronDown size={10} /></button>
+              </div>
+              <div className="w-1 h-1 rounded-full bg-slate-300 flex-shrink-0" />
+              {editingSubId === sub.id ? (
+                <div className="flex flex-1 gap-1">
+                  <input className="input flex-1 text-xs py-0.5" value={editSubText}
+                    onChange={(e) => setEditSubText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveEditSubItem(); if (e.key === 'Escape') setEditingSubId(null); }}
+                    autoFocus />
+                  <button className="p-0.5 rounded hover:bg-green-50 text-green-600" onClick={saveEditSubItem}><Check size={11} /></button>
+                  <button className="p-0.5 rounded hover:bg-slate-100 text-slate-400" onClick={() => setEditingSubId(null)}><X size={11} /></button>
+                </div>
+              ) : (
+                <>
+                  <span className="flex-1 text-xs text-slate-500">{sub.text}</span>
+                  <button className="opacity-0 group-hover/sub:opacity-100 p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 transition-opacity"
+                    onClick={() => startEditSubItem(sub)}><Edit2 size={10} /></button>
+                  <button className="opacity-0 group-hover/sub:opacity-100 p-0.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 transition-opacity"
+                    onClick={() => deleteSubItem(sub.id)}><Trash2 size={10} /></button>
+                </>
+              )}
+            </div>
+          ))}
+
+          {addingSubItem ? (
+            <div className="flex gap-1 mt-0.5">
+              <input className="input flex-1 text-xs" placeholder="하위 항목..." value={newSubText}
+                onChange={(e) => setNewSubText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addSubItem(); if (e.key === 'Escape') setAddingSubItem(false); }}
+                autoFocus />
+              <button className="btn-primary text-xs py-0.5 px-2" onClick={addSubItem}>추가</button>
+              <button className="btn-secondary text-xs py-0.5 px-2" onClick={() => setAddingSubItem(false)}>취소</button>
+            </div>
+          ) : (
+            <button
+              className="flex items-center gap-0.5 text-xs text-slate-300 hover:text-indigo-400 transition-colors mt-0.5"
+              onClick={() => setAddingSubItem(true)}
+            >
+              <Plus size={9} /> 추가
             </button>
           )}
         </div>
