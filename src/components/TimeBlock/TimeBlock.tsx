@@ -199,6 +199,13 @@ export default function TimeBlock() {
                         style={{ top: (SLOT_HEIGHT / 4) * q }}
                       />
                     ))}
+                    {/* Memo indicator dot (when memo column is hidden) */}
+                    {!showMemos && timeBlockMemos[`${selectedDate}__${hour}`] && (
+                      <div
+                        className="absolute right-2 top-1.5 w-2 h-2 rounded-full bg-amber-400"
+                        title={timeBlockMemos[`${selectedDate}__${hour}`]}
+                      />
+                    )}
                   </div>
                   {showMemos && (
                     <div
