@@ -31,7 +31,7 @@ export default function WeeklyPlan() {
     monthlyGoalId: '',
     monthlyPlanItemId: '',
   });
-  const [editForm, setEditForm] = useState({ title: '' });
+  const [editForm, setEditForm] = useState({ title: '', domain: 'output' as Domain });
 
   // Weekly plan items (goals) state
   const [newGoalTitle, setNewGoalTitle] = useState('');
@@ -86,12 +86,12 @@ export default function WeeklyPlan() {
 
   function startEdit(task: typeof tasks[0]) {
     setEditingId(task.id);
-    setEditForm({ title: task.title });
+    setEditForm({ title: task.title, domain: task.domain ?? 'output' });
   }
 
   function saveEdit() {
     if (!editingId || !editForm.title.trim()) return;
-    updateWeeklyTask(editingId, { title: editForm.title.trim() });
+    updateWeeklyTask(editingId, { title: editForm.title.trim(), domain: editForm.domain });
     setEditingId(null);
   }
 
@@ -398,13 +398,25 @@ export default function WeeklyPlan() {
                                   autoFocus
                                   className="w-full text-xs border border-slate-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-pink-400"
                                   value={editForm.title}
-                                  onChange={(e) => setEditForm({ title: e.target.value })}
+                                  onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') saveEdit();
                                     if (e.key === 'Escape') setEditingId(null);
                                   }}
-                                  onBlur={saveEdit}
                                 />
+                                <div className="flex gap-1">
+                                  <select
+                                    className="select flex-1 text-xs py-0.5"
+                                    value={editForm.domain}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, domain: e.target.value as Domain }))}
+                                  >
+                                    {domains.map((d) => (
+                                      <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                                    ))}
+                                  </select>
+                                  <button className="btn-primary text-xs px-2 py-0.5" onClick={saveEdit}>저장</button>
+                                  <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingId(null)}>취소</button>
+                                </div>
                               </div>
                             ) : (
                               <>

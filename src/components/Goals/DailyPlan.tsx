@@ -24,6 +24,7 @@ export default function DailyPlan() {
   const [newTaskDomain, setNewTaskDomain] = useState<Domain>('output');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskTitle, setEditTaskTitle] = useState('');
+  const [editTaskDomain, setEditTaskDomain] = useState<Domain>('output');
 
   const existing = dailyPlans.find((p) => p.date === selectedDate);
   const [plan, setPlan] = useState<DailyPlanData>(existing ?? emptyPlan(selectedDate));
@@ -100,6 +101,7 @@ export default function DailyPlan() {
   function startEditTask(task: DailyTask) {
     setEditingTaskId(task.id);
     setEditTaskTitle(task.title);
+    setEditTaskDomain(task.domain ?? 'output');
   }
 
   function saveEditTask() {
@@ -107,7 +109,7 @@ export default function DailyPlan() {
     save({
       ...plan,
       tasks: plan.tasks.map((t) =>
-        t.id === editingTaskId ? { ...t, title: editTaskTitle.trim() } : t
+        t.id === editingTaskId ? { ...t, title: editTaskTitle.trim(), domain: editTaskDomain } : t
       ),
     });
     setEditingTaskId(null);
@@ -337,17 +339,31 @@ export default function DailyPlan() {
                     style={cfg ? { accentColor: cfg.color } : {}}
                   />
                   {editingTaskId === task.id ? (
-                    <input
-                      autoFocus
-                      className="input flex-1 text-sm py-0.5"
-                      value={editTaskTitle}
-                      onChange={(e) => setEditTaskTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEditTask();
-                        if (e.key === 'Escape') setEditingTaskId(null);
-                      }}
-                      onBlur={saveEditTask}
-                    />
+                    <div className="flex flex-1 flex-col gap-1">
+                      <input
+                        autoFocus
+                        className="input flex-1 text-sm py-0.5"
+                        value={editTaskTitle}
+                        onChange={(e) => setEditTaskTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEditTask();
+                          if (e.key === 'Escape') setEditingTaskId(null);
+                        }}
+                      />
+                      <div className="flex gap-1">
+                        <select
+                          className="select flex-1 text-xs py-0.5"
+                          value={editTaskDomain}
+                          onChange={(e) => setEditTaskDomain(e.target.value as Domain)}
+                        >
+                          {domains.map((d) => (
+                            <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                          ))}
+                        </select>
+                        <button className="btn-primary text-xs px-2 py-0.5" onClick={saveEditTask}>저장</button>
+                        <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingTaskId(null)}>취소</button>
+                      </div>
+                    </div>
                   ) : (
                     <span className={`flex-1 text-sm leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                       {task.title}
