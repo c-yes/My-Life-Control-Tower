@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
+import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId } from '../../utils/helpers';
 import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 
@@ -7,8 +8,9 @@ export default function WannabeList() {
   const { wannabeItems, addWannabeItem, updateWannabeItem, deleteWannabeItem } = useStore();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', category: '' });
-  const [editForm, setEditForm] = useState({ title: '', description: '', category: '' });
+  const [form, setForm] = useState({ title: '', description: '', category: '' as Domain | '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', category: '' as Domain | '' });
+  const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
   function handleAdd() {
     if (!form.title.trim()) return;
@@ -16,7 +18,7 @@ export default function WannabeList() {
       id: generateId(),
       title: form.title.trim(),
       description: form.description.trim(),
-      category: form.category.trim(),
+      category: form.category,
       completed: false,
       createdAt: new Date().toISOString(),
     });
@@ -24,9 +26,24 @@ export default function WannabeList() {
     setShowAddForm(false);
   }
 
+  function normalizeCategoryToKey(cat: string): Domain | '' {
+    if (!cat) return '';
+    const lower = cat.toLowerCase();
+    if ((Object.keys(DOMAIN_CONFIG) as Domain[]).includes(lower as Domain)) return lower as Domain;
+    // legacy: match by label
+    const byLabel = (Object.keys(DOMAIN_CONFIG) as Domain[]).find(
+      (d) => DOMAIN_CONFIG[d].label.toLowerCase() === lower
+    );
+    return byLabel ?? '';
+  }
+
   function startEdit(item: typeof wannabeItems[0]) {
     setEditingId(item.id);
-    setEditForm({ title: item.title, description: item.description, category: item.category ?? '' });
+    setEditForm({
+      title: item.title,
+      description: item.description,
+      category: normalizeCategoryToKey(item.category ?? ''),
+    });
   }
 
   function saveEdit() {
@@ -34,15 +51,24 @@ export default function WannabeList() {
     updateWannabeItem(editingId, {
       title: editForm.title.trim(),
       description: editForm.description.trim(),
-      category: editForm.category.trim(),
+      category: editForm.category,
     });
     setEditingId(null);
   }
 
-  // Group by category
-  const categories = Array.from(new Set(wannabeItems.map((i) => i.category || '기타'))).sort();
-  const uncategorized = wannabeItems.filter((i) => !i.category);
-  const grouped = categories.reduce((acc, cat) => {
+  // Normalize category: try to match to a domain key (case-insensitive)
+  function getItemDomain(item: typeof wannabeItems[0]): Domain | null {
+    if (!item.category) return null;
+    const cat = item.category.toLowerCase();
+    if (domains.includes(cat as Domain)) return cat as Domain;
+    // backward compat: match by label
+    const byLabel = domains.find((d) => DOMAIN_CONFIG[d].label.toLowerCase() === cat);
+    return byLabel ?? null;
+  }
+
+  // Group by category key (domain key or raw string)
+  const categoryKeys = Array.from(new Set(wannabeItems.map((i) => i.category || '기타'))).sort();
+  const grouped = categoryKeys.reduce((acc, cat) => {
     acc[cat] = wannabeItems.filter((i) => (i.category || '기타') === cat);
     return acc;
   }, {} as Record<string, typeof wannabeItems>);
@@ -76,12 +102,16 @@ export default function WannabeList() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
-            <input
-              className="input"
-              placeholder="카테고리 (선택)"
+            <select
+              className="select w-full"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-            />
+              onChange={(e) => setForm({ ...form, category: e.target.value as Domain | '' })}
+            >
+              <option value="">카테고리 없음</option>
+              {domains.map((d) => (
+                <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+              ))}
+            </select>
             <textarea
               className="textarea h-20"
               placeholder="설명 (선택)"
@@ -112,22 +142,32 @@ export default function WannabeList() {
       )}
 
       {/* Items by category */}
-      {categories.map((cat) => {
+      {categoryKeys.map((cat) => {
         const items = grouped[cat];
         if (!items || items.length === 0) return null;
+        // Check if cat is a domain key (new format) or legacy string
+        const domainKey = domains.includes(cat as Domain) ? cat as Domain : null;
+        const cfg = domainKey ? DOMAIN_CONFIG[domainKey] : null;
+        const headerLabel = cfg ? cfg.label : cat;
+        const headerColor = cfg ? cfg.color : '#ec4899';
         return (
           <div key={cat}>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">
-                {cat}
+              <span
+                className="text-xs font-bold uppercase tracking-widest"
+                style={{ color: headerColor }}
+              >
+                {headerLabel}
               </span>
-              <div className="flex-1 h-px bg-slate-200" />
+              <div className="flex-1 h-px" style={{ background: `${headerColor}40` }} />
               <span className="text-xs text-slate-400">
                 {items.filter((i) => i.completed).length}/{items.length}
               </span>
             </div>
             <div className="space-y-2">
               {items.map((item) => {
+                const itemDomain = getItemDomain(item);
+                const itemCfg = itemDomain ? DOMAIN_CONFIG[itemDomain] : null;
                 if (editingId === item.id) {
                   return (
                     <div key={item.id} className="card border-pink-200 bg-pink-50 space-y-2">
@@ -138,12 +178,16 @@ export default function WannabeList() {
                         onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                         onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                       />
-                      <input
-                        className="input"
-                        placeholder="카테고리"
+                      <select
+                        className="select w-full"
                         value={editForm.category}
-                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      />
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Domain | '' })}
+                      >
+                        <option value="">카테고리 없음</option>
+                        {domains.map((d) => (
+                          <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                        ))}
+                      </select>
                       <textarea
                         className="textarea h-16"
                         placeholder="설명"
@@ -170,13 +214,14 @@ export default function WannabeList() {
                         ? 'bg-slate-50 border-slate-100'
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
+                    style={itemCfg ? { borderLeftWidth: 3, borderLeftColor: itemCfg.color } : {}}
                   >
                     <input
                       type="checkbox"
                       checked={item.completed}
                       onChange={() => updateWannabeItem(item.id, { completed: !item.completed })}
                       className="mt-0.5 w-4 h-4 rounded cursor-pointer"
-                      style={{ accentColor: '#ec4899' }}
+                      style={{ accentColor: itemCfg ? itemCfg.color : '#ec4899' }}
                     />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
