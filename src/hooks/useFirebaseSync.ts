@@ -31,13 +31,24 @@ export function useFirebaseSync(user: User | null) {
       if (data.lifeCompass) s.updateLifeCompass(data.lifeCompass);
       if (data.annualGoals) useStore.setState({ annualGoals: data.annualGoals });
       if (data.monthlyGoals) useStore.setState({ monthlyGoals: data.monthlyGoals });
+      if (data.monthlyPlanItems) useStore.setState({ monthlyPlanItems: data.monthlyPlanItems });
       if (data.weeklyTasks) useStore.setState({ weeklyTasks: data.weeklyTasks });
+      if (data.weeklyPlanItems) useStore.setState({ weeklyPlanItems: data.weeklyPlanItems });
       if (data.dailyPlans) useStore.setState({ dailyPlans: data.dailyPlans });
       if (data.timeBlocks) useStore.setState({ timeBlocks: data.timeBlocks });
+      if (data.timeBlockMemos) useStore.setState({ timeBlockMemos: data.timeBlockMemos });
       if (data.miracle21Habits) useStore.setState({ miracle21Habits: data.miracle21Habits });
       if (data.mindMaps) useStore.setState({ mindMaps: data.mindMaps });
+      if (data.mindMapDocs) useStore.setState({ mindMapDocs: data.mindMapDocs });
       if (data.domainEntries) useStore.setState({ domainEntries: data.domainEntries });
       if (data.domainScores) useStore.setState({ domainScores: data.domainScores });
+      if (data.wannabeItems) useStore.setState({ wannabeItems: data.wannabeItems });
+      if (data.wannabeNotes !== undefined) useStore.setState({ wannabeNotes: data.wannabeNotes });
+      if (data.annualFeedbacks) useStore.setState({ annualFeedbacks: data.annualFeedbacks });
+      if (data.monthlyFeedbacks) useStore.setState({ monthlyFeedbacks: data.monthlyFeedbacks });
+      if (data.weeklyFeedbacks) useStore.setState({ weeklyFeedbacks: data.weeklyFeedbacks });
+      if (data.journalEntries) useStore.setState({ journalEntries: data.journalEntries });
+      if (data.ddayItems) useStore.setState({ ddayItems: data.ddayItems });
 
       isRemoteUpdate.current = false;
     });
@@ -61,13 +72,24 @@ export function useFirebaseSync(user: User | null) {
         lifeCompass: s.lifeCompass,
         annualGoals: s.annualGoals,
         monthlyGoals: s.monthlyGoals,
+        monthlyPlanItems: s.monthlyPlanItems,
         weeklyTasks: s.weeklyTasks,
+        weeklyPlanItems: s.weeklyPlanItems,
         dailyPlans: s.dailyPlans,
         timeBlocks: s.timeBlocks,
+        timeBlockMemos: s.timeBlockMemos,
         miracle21Habits: s.miracle21Habits,
         mindMaps: s.mindMaps,
+        mindMapDocs: s.mindMapDocs,
         domainEntries: s.domainEntries,
         domainScores: s.domainScores,
+        wannabeItems: s.wannabeItems,
+        wannabeNotes: s.wannabeNotes,
+        annualFeedbacks: s.annualFeedbacks,
+        monthlyFeedbacks: s.monthlyFeedbacks,
+        weeklyFeedbacks: s.weeklyFeedbacks,
+        journalEntries: s.journalEntries,
+        ddayItems: s.ddayItems,
       }, { merge: true });
     }, 1000);
 
@@ -79,12 +101,23 @@ export function useFirebaseSync(user: User | null) {
     store.lifeCompass,
     store.annualGoals,
     store.monthlyGoals,
+    store.monthlyPlanItems,
     store.weeklyTasks,
+    store.weeklyPlanItems,
     store.dailyPlans,
     store.timeBlocks,
+    store.timeBlockMemos,
     store.miracle21Habits,
     store.mindMaps,
+    store.mindMapDocs,
     store.domainEntries,
     store.domainScores,
+    store.wannabeItems,
+    store.wannabeNotes,
+    store.annualFeedbacks,
+    store.monthlyFeedbacks,
+    store.weeklyFeedbacks,
+    store.journalEntries,
+    store.ddayItems,
   ]);
 }
