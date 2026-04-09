@@ -5,7 +5,7 @@ import { generateId } from '../../utils/helpers';
 import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
 
 export default function WannabeList() {
-  const { wannabeItems, addWannabeItem, updateWannabeItem, deleteWannabeItem } = useStore();
+  const { wannabeItems, addWannabeItem, updateWannabeItem, deleteWannabeItem, wannabeNotes, setWannabeNotes } = useStore();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', description: '', category: '' as Domain | '' });
@@ -250,6 +250,17 @@ export default function WannabeList() {
           </div>
         );
       })}
+
+      {/* Notes / Issues */}
+      <div className="card">
+        <h3 className="font-bold text-slate-800 mb-2">Notes</h3>
+        <textarea
+          className="textarea h-28"
+          placeholder="이슈, 메모, 하고 싶은 이유 등을 자유롭게 적어보세요."
+          value={wannabeNotes}
+          onChange={(e) => setWannabeNotes(e.target.value)}
+        />
+      </div>
     </div>
   );
 }

@@ -102,6 +102,8 @@ interface AppState {
   addWannabeItem: (item: WannabeItem) => void;
   updateWannabeItem: (id: string, updates: Partial<WannabeItem>) => void;
   deleteWannabeItem: (id: string) => void;
+  wannabeNotes: string;
+  setWannabeNotes: (notes: string) => void;
 
   // Time Block Memos: key = "${date}__${hour}"
   timeBlockMemos: Record<string, string>;
@@ -312,6 +314,8 @@ export const useStore = create<AppState>()(
         })),
       deleteWannabeItem: (id) =>
         set((state) => ({ wannabeItems: state.wannabeItems.filter((i) => i.id !== id) })),
+      wannabeNotes: '',
+      setWannabeNotes: (notes) => set({ wannabeNotes: notes }),
 
       // Time Block Memos
       timeBlockMemos: {},
