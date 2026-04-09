@@ -14,6 +14,8 @@ const navItems = [
   { path: '/mandalart', label: 'Mandal Art' },
   { path: '/domain-tracker', label: 'Domain Tracker' },
   { path: '/wannabe-list', label: 'Wannabe List' },
+  { path: '/journal', label: 'Journal' },
+  { path: '/dday', label: 'D-Day' },
   { path: '/achievements', label: 'Achievements' },
 ];
 

@@ -15,6 +15,8 @@ import Mandalart from './components/Mandalart/Mandalart';
 import DomainTracker from './components/DomainTracker/DomainTracker';
 import WannabeList from './components/WannabeList/WannabeList';
 import Achievements from './components/Achievements/Achievements';
+import Journal from './components/Journal/Journal';
+import DDay from './components/DDay/DDay';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 
@@ -133,6 +135,8 @@ function AppInner() {
               <Route path="/mandalart" element={<Mandalart />} />
               <Route path="/domain-tracker" element={<DomainTracker />} />
               <Route path="/wannabe-list" element={<WannabeList />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/dday" element={<DDay />} />
               <Route path="/achievements" element={<Achievements />} />
             </Routes>
           </div>

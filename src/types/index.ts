@@ -195,6 +195,29 @@ export interface WannabeItem {
   category?: string;
 }
 
+// ── Journal ───────────────────────────────────────────────────────────────────
+
+export interface JournalEntry {
+  id: string;
+  year: number;
+  month: number; // 1–12
+  date: string;  // YYYY-MM-DD
+  title: string;
+  content: string;
+  status: 'open' | 'done';
+  domain?: Domain;
+}
+
+// ── D-Day ─────────────────────────────────────────────────────────────────────
+
+export interface DDayItem {
+  id: string;
+  title: string;
+  targetDate: string; // YYYY-MM-DD
+  domain?: Domain;
+  color: string;
+}
+
 // Legacy habit (kept for backward compatibility)
 export interface Habit {
   id: string;

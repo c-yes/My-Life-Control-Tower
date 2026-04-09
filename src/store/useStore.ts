@@ -16,6 +16,8 @@ import {
   DomainEntry,
   Miracle21Habit,
   WannabeItem,
+  JournalEntry,
+  DDayItem,
   Domain,
 } from '../types';
 
@@ -116,6 +118,18 @@ interface AppState {
   setAnnualFeedback: (year: number, text: string) => void;
   setMonthlyFeedback: (year: number, month: number, text: string) => void;
   setWeeklyFeedback: (year: number, week: number, text: string) => void;
+
+  // Journal
+  journalEntries: JournalEntry[];
+  addJournalEntry: (entry: JournalEntry) => void;
+  updateJournalEntry: (id: string, updates: Partial<JournalEntry>) => void;
+  deleteJournalEntry: (id: string) => void;
+
+  // D-Day
+  ddayItems: DDayItem[];
+  addDDayItem: (item: DDayItem) => void;
+  updateDDayItem: (id: string, updates: Partial<DDayItem>) => void;
+  deleteDDayItem: (id: string) => void;
 }
 
 const defaultLifeCompass: LifeCompassData = {
@@ -334,6 +348,28 @@ export const useStore = create<AppState>()(
         set((state) => ({ monthlyFeedbacks: { ...state.monthlyFeedbacks, [`${year}-${month}`]: text } })),
       setWeeklyFeedback: (year, week, text) =>
         set((state) => ({ weeklyFeedbacks: { ...state.weeklyFeedbacks, [`${year}-${week}`]: text } })),
+
+      // Journal
+      journalEntries: [],
+      addJournalEntry: (entry) =>
+        set((state) => ({ journalEntries: [...state.journalEntries, entry] })),
+      updateJournalEntry: (id, updates) =>
+        set((state) => ({
+          journalEntries: state.journalEntries.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+        })),
+      deleteJournalEntry: (id) =>
+        set((state) => ({ journalEntries: state.journalEntries.filter((e) => e.id !== id) })),
+
+      // D-Day
+      ddayItems: [],
+      addDDayItem: (item) =>
+        set((state) => ({ ddayItems: [...state.ddayItems, item] })),
+      updateDDayItem: (id, updates) =>
+        set((state) => ({
+          ddayItems: state.ddayItems.map((d) => (d.id === id ? { ...d, ...updates } : d)),
+        })),
+      deleteDDayItem: (id) =>
+        set((state) => ({ ddayItems: state.ddayItems.filter((d) => d.id !== id) })),
     }),
     {
       name: 'life-control-tower-storage',
