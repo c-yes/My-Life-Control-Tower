@@ -197,6 +197,17 @@ export interface WannabeItem {
 
 // ── Journal ───────────────────────────────────────────────────────────────────
 
+export type JournalType = 'commitment' | 'anniversary' | 'deadline' | 'achievement' | 'routine' | 'memo';
+
+export const JOURNAL_TYPE_CONFIG: Record<JournalType, { labelKo: string; emoji: string; hasStatus: boolean; color: string }> = {
+  commitment:  { labelKo: '다짐',     emoji: '📝', hasStatus: true,  color: '#7D3C98' },
+  anniversary: { labelKo: '기념일',   emoji: '🎂', hasStatus: false, color: '#FF7A5A' },
+  deadline:    { labelKo: '데드라인', emoji: '🎯', hasStatus: true,  color: '#ef4444' },
+  achievement: { labelKo: '성과',     emoji: '✨', hasStatus: false, color: '#D4AC0D' },
+  routine:     { labelKo: '루틴',     emoji: '🔄', hasStatus: false, color: '#52A97E' },
+  memo:        { labelKo: '메모',     emoji: '💭', hasStatus: false, color: '#6C7A89' },
+};
+
 export interface JournalEntry {
   id: string;
   year: number;
@@ -204,6 +215,7 @@ export interface JournalEntry {
   date: string;  // YYYY-MM-DD
   title: string;
   content: string;
+  type?: JournalType;   // optional for backward compat; defaults to 'memo'
   status: 'open' | 'done';
   domain?: Domain;
 }

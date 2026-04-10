@@ -30,7 +30,7 @@ This file tells Claude Code what must NEVER be changed or deleted without explic
 | `/mandalart` | Mandalart | 3×3 Mandalart grid, multiple documents |
 | `/domain-tracker` | DomainTracker | Weekly table per domain, domain scores |
 | `/wannabe-list` | WannabeList | Items with domain category select (NOT free text), Notes textarea at bottom |
-| `/journal` | Journal | Issue-tracker style, month tabs Jan–Dec, year selector, Open/Done status, domain badge, expand/collapse content |
+| `/journal` | Journal | Issue-tracker style, month tabs Jan–Dec, year selector, **type field** (다짐/기념일/데드라인/성과/루틴/메모), Open/Done status only for 다짐+데드라인, domain badge, expand/collapse content |
 | `/dday` | DDay | Countdown cards (D-N/D+N), color picker, domain badge, edit feature |
 | `/achievements` | Achievements | Completed goals summary |
 
