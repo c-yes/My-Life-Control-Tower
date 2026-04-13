@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 export default function WeeklyPlan() {
   const {
     weeklyTasks, addWeeklyTask, updateWeeklyTask, deleteWeeklyTask,
-    monthlyGoals, monthlyPlanItems,
+    monthlyGoals, monthlyPlanItems, updateMonthlyPlanItem,
     weeklyPlanItems, addWeeklyPlanItem, updateWeeklyPlanItem, deleteWeeklyPlanItem,
     weeklyFeedbacks, setWeeklyFeedback,
   } = useStore();
@@ -265,6 +265,47 @@ export default function WeeklyPlan() {
         <span className="text-xs font-bold text-pink-500 uppercase tracking-widest">Goals</span>
         <div className="flex-1 h-px bg-slate-200" />
       </div>
+
+      {/* Monthly plan items reference (always visible) */}
+      {relevantMonthlyPlanItems.length > 0 && (
+        <div className="card">
+          <h4 className="font-semibold text-slate-800 mb-3">
+            이달의 실행 계획
+            <span className="ml-2 text-xs font-normal text-slate-400">참고</span>
+          </h4>
+          <div className="space-y-1.5">
+            {relevantMonthlyPlanItems.map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                  item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={item.completed}
+                  onChange={() => updateMonthlyPlanItem(item.id, { completed: !item.completed })}
+                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                  style={{ accentColor: '#c45c8a' }}
+                />
+                <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                  {item.title}
+                </span>
+                <button
+                  type="button"
+                  className="text-xs text-pink-400 hover:text-pink-600 flex-shrink-0"
+                  onClick={() => {
+                    setForm({ ...form, title: item.title, daysOfWeek: [] });
+                    setShowAddForm(true);
+                  }}
+                >
+                  ↑ 태스크로
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Weekly Goals (plan items) */}
       <div className="card">
