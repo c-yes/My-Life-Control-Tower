@@ -174,6 +174,7 @@ export interface MonthlyPlanItem {
   month: number;
   title: string;
   completed: boolean;
+  domain?: Domain;
 }
 
 // Weekly Plan Items (written in Weekly Goals section, visible when creating daily tasks)

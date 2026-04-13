@@ -274,35 +274,48 @@ export default function WeeklyPlan() {
             <span className="ml-2 text-xs font-normal text-slate-400">참고</span>
           </h4>
           <div className="space-y-1.5">
-            {relevantMonthlyPlanItems.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                  item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  onChange={() => updateMonthlyPlanItem(item.id, { completed: !item.completed })}
-                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
-                  style={{ accentColor: '#c45c8a' }}
-                />
-                <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                  {item.title}
-                </span>
-                <button
-                  type="button"
-                  className="text-xs text-pink-400 hover:text-pink-600 flex-shrink-0"
-                  onClick={() => {
-                    setForm({ ...form, title: item.title, daysOfWeek: [] });
-                    setShowAddForm(true);
-                  }}
+            {relevantMonthlyPlanItems.map((item) => {
+              const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                    item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+                  }`}
+                  style={cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}}
                 >
-                  ↑ 태스크로
-                </button>
-              </div>
-            ))}
+                  <input
+                    type="checkbox"
+                    checked={item.completed}
+                    onChange={() => updateMonthlyPlanItem(item.id, { completed: !item.completed })}
+                    className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                    style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
+                  />
+                  <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                    {item.title}
+                  </span>
+                  {cfg && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: `${cfg.color}20`, color: cfg.color }}
+                    >
+                      {cfg.label}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="text-xs text-pink-400 hover:text-pink-600 flex-shrink-0"
+                    onClick={() => {
+                      setForm({ ...form, title: item.title, daysOfWeek: [],
+                        domain: (item.domain ?? 'output') as Domain });
+                      setShowAddForm(true);
+                    }}
+                  >
+                    ↑ 태스크로
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
