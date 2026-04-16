@@ -66,10 +66,12 @@ export default function WannabeList() {
     return byLabel ?? null;
   }
 
-  // Group by category key (domain key or raw string)
-  const categoryKeys = Array.from(new Set(wannabeItems.map((i) => i.category || '기타'))).sort();
+  // Group by normalized domain key (handles legacy "Care" → "care" etc.)
+  const categoryKeys = Array.from(
+    new Set(wannabeItems.map((i) => normalizeCategoryToKey(i.category ?? '') || '기타'))
+  ).sort();
   const grouped = categoryKeys.reduce((acc, cat) => {
-    acc[cat] = wannabeItems.filter((i) => (i.category || '기타') === cat);
+    acc[cat] = wannabeItems.filter((i) => (normalizeCategoryToKey(i.category ?? '') || '기타') === cat);
     return acc;
   }, {} as Record<string, typeof wannabeItems>);
 
