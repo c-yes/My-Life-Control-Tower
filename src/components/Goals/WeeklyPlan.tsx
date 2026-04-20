@@ -35,8 +35,10 @@ export default function WeeklyPlan() {
 
   // Weekly plan items (goals) state
   const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalDomain, setNewGoalDomain] = useState<Domain | ''>('');
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editGoalTitle, setEditGoalTitle] = useState('');
+  const [editGoalDomain, setEditGoalDomain] = useState<Domain | ''>('');
 
   const tasks = weeklyTasks.filter((t) => t.year === year && t.week === week);
   const weekDays = getWeekDays(year, week);
@@ -103,13 +105,18 @@ export default function WeeklyPlan() {
       week,
       title: newGoalTitle.trim(),
       completed: false,
+      domain: newGoalDomain || undefined,
     });
     setNewGoalTitle('');
+    setNewGoalDomain('');
   }
 
   function saveGoalEdit() {
     if (!editingGoalId || !editGoalTitle.trim()) return;
-    updateWeeklyPlanItem(editingGoalId, { title: editGoalTitle.trim() });
+    updateWeeklyPlanItem(editingGoalId, {
+      title: editGoalTitle.trim(),
+      domain: editGoalDomain || undefined,
+    });
     setEditingGoalId(null);
   }
 
@@ -327,53 +334,84 @@ export default function WeeklyPlan() {
           {thisWeekGoals.length === 0 && (
             <p className="text-xs text-slate-400">이번 주 목표를 작성해보세요.</p>
           )}
-          {thisWeekGoals.map((item) => (
-            <div
-              key={item.id}
-              className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={item.completed}
-                onChange={() => updateWeeklyPlanItem(item.id, { completed: !item.completed })}
-                className="w-4 h-4 rounded cursor-pointer"
-                style={{ accentColor: '#c45c8a' }}
-              />
-              {editingGoalId === item.id ? (
-                <input
-                  autoFocus
-                  className="input flex-1 text-sm py-0.5"
-                  value={editGoalTitle}
-                  onChange={(e) => setEditGoalTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveGoalEdit();
-                    if (e.key === 'Escape') setEditingGoalId(null);
-                  }}
-                  onBlur={saveGoalEdit}
-                />
-              ) : (
-                <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                  {item.title}
-                </span>
-              )}
-              {editingGoalId !== item.id && (
-                <button
-                  className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500"
-                  onClick={() => { setEditingGoalId(item.id); setEditGoalTitle(item.title); }}
-                >
-                  <Edit2 size={13} />
-                </button>
-              )}
-              <button
-                className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
-                onClick={() => deleteWeeklyPlanItem(item.id)}
+          {thisWeekGoals.map((item) => {
+            const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
+            return (
+              <div
+                key={item.id}
+                className={`flex items-center gap-3 p-2.5 rounded-lg border ${
+                  item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+                }`}
+                style={cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}}
               >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
+                <input
+                  type="checkbox"
+                  checked={item.completed}
+                  onChange={() => updateWeeklyPlanItem(item.id, { completed: !item.completed })}
+                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                  style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
+                />
+                {editingGoalId === item.id ? (
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      autoFocus
+                      className="input flex-1 text-sm py-0.5"
+                      value={editGoalTitle}
+                      onChange={(e) => setEditGoalTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveGoalEdit();
+                        if (e.key === 'Escape') setEditingGoalId(null);
+                      }}
+                    />
+                    <select
+                      className="select text-sm py-0.5"
+                      value={editGoalDomain}
+                      onChange={(e) => setEditGoalDomain(e.target.value as Domain | '')}
+                    >
+                      <option value="">도메인 없음</option>
+                      {domains.map((d) => (
+                        <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                      ))}
+                    </select>
+                    <button className="btn-primary text-xs px-2 py-0.5" onClick={saveGoalEdit}>저장</button>
+                    <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingGoalId(null)}>취소</button>
+                  </div>
+                ) : (
+                  <>
+                    <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                      {item.title}
+                    </span>
+                    {cfg && (
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: `${cfg.color}20`, color: cfg.color }}
+                      >
+                        {cfg.label}
+                      </span>
+                    )}
+                  </>
+                )}
+                {editingGoalId !== item.id && (
+                  <button
+                    className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
+                    onClick={() => {
+                      setEditingGoalId(item.id);
+                      setEditGoalTitle(item.title);
+                      setEditGoalDomain(item.domain ?? '');
+                    }}
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                )}
+                <button
+                  className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
+                  onClick={() => deleteWeeklyPlanItem(item.id)}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            );
+          })}
         </div>
         <div className="flex gap-2">
           <input
@@ -383,6 +421,16 @@ export default function WeeklyPlan() {
             onChange={(e) => setNewGoalTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addWeekGoal()}
           />
+          <select
+            className="select"
+            value={newGoalDomain}
+            onChange={(e) => setNewGoalDomain(e.target.value as Domain | '')}
+          >
+            <option value="">도메인</option>
+            {domains.map((d) => (
+              <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+            ))}
+          </select>
           <button className="btn-primary flex items-center gap-1" onClick={addWeekGoal}>
             <Plus size={14} /> Add
           </button>

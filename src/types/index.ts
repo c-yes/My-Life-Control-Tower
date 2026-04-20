@@ -184,6 +184,7 @@ export interface WeeklyPlanItem {
   week: number;
   title: string;
   completed: boolean;
+  domain?: Domain;
 }
 
 // Wannabe List items
