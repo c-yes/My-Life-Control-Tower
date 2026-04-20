@@ -30,6 +30,11 @@ export function getCurrentWeek(): number {
   return getWeek(new Date(), { weekStartsOn: 1 });
 }
 
+export function getWeekForDate(date: Date | string): number {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return getWeek(d, { weekStartsOn: 1 });
+}
+
 export function getWeekDateRange(year: number, week: number): { start: Date; end: Date } {
   const jan1 = new Date(year, 0, 1);
   const daysOffset = (week - 1) * 7;

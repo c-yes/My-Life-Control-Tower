@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
-import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS, getCurrentYear, getCurrentWeek } from '../../utils/helpers';
+import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS, getCurrentYear, getCurrentWeek, getWeekForDate } from '../../utils/helpers';
 import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
 
 const emptyPlan = (date: string): DailyPlanData => ({
@@ -34,9 +34,10 @@ export default function DailyPlan() {
     setPlan(found ?? emptyPlan(selectedDate));
   }, [selectedDate, dailyPlans]);
 
-  // Get current week's plan items for reference
-  const year = getCurrentYear();
-  const week = getCurrentWeek();
+  // Get selected date's week plan items for reference
+  const selectedDateObj = new Date(selectedDate);
+  const year = selectedDateObj.getFullYear();
+  const week = getWeekForDate(selectedDate);
   const thisWeekPlanItems = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
 
   function save(updated: DailyPlanData) {
