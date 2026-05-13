@@ -3,7 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
 import { generateId, getTodayString, formatDateDisplay, MOOD_EMOJIS, getCurrentYear, getCurrentWeek, getWeekForDate } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Check, X, ArrowRight, Star, Edit2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const emptyPlan = (date: string): DailyPlanData => ({
   date,
@@ -98,6 +114,19 @@ export default function DailyPlan() {
     [tasks[idx], tasks[newIdx]] = [tasks[newIdx], tasks[idx]];
     save({ ...plan, tasks });
   }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = plan.tasks.findIndex((t) => t.id === active.id);
+    const newIdx = plan.tasks.findIndex((t) => t.id === over.id);
+    save({ ...plan, tasks: arrayMove(plan.tasks, oldIdx, newIdx) });
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
 
   function startEditTask(task: DailyTask) {
     setEditingTaskId(task.id);
@@ -303,113 +332,34 @@ export default function DailyPlan() {
           )}
         </div>
 
-        <div className="space-y-2 mb-4">
-          {plan.tasks.map((task, idx) => {
-            const cfg = task.domain ? DOMAIN_CONFIG[task.domain] : null;
-            const isPinned = plan.topPriorities.includes(task.title);
-            return (
-              <div
-                key={task.id}
-                className={`group p-3 rounded-lg border ${
-                  task.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
-                }`}
-              >
-                {/* Row 1: reorder + checkbox + title */}
-                <div className="flex items-start gap-2">
-                  <div className="hidden md:flex flex-col flex-shrink-0 mt-0.5">
-                    <button
-                      className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                      disabled={idx === 0}
-                      onClick={() => moveTask(task.id, 'up')}
-                    >
-                      <ChevronUp size={12} />
-                    </button>
-                    <button
-                      className="p-0.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 disabled:opacity-20"
-                      disabled={idx === plan.tasks.length - 1}
-                      onClick={() => moveTask(task.id, 'down')}
-                    >
-                      <ChevronDown size={12} />
-                    </button>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => toggleTask(task.id)}
-                    className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
-                    style={cfg ? { accentColor: cfg.color } : {}}
-                  />
-                  {editingTaskId === task.id ? (
-                    <div className="flex flex-1 flex-col gap-1">
-                      <input
-                        autoFocus
-                        className="input flex-1 text-sm py-0.5"
-                        value={editTaskTitle}
-                        onChange={(e) => setEditTaskTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveEditTask();
-                          if (e.key === 'Escape') setEditingTaskId(null);
-                        }}
-                      />
-                      <div className="flex gap-1">
-                        <select
-                          className="select flex-1 text-xs py-0.5"
-                          value={editTaskDomain}
-                          onChange={(e) => setEditTaskDomain(e.target.value as Domain)}
-                        >
-                          {domains.map((d) => (
-                            <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
-                          ))}
-                        </select>
-                        <button className="btn-primary text-xs px-2 py-0.5" onClick={saveEditTask}>저장</button>
-                        <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingTaskId(null)}>취소</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className={`flex-1 text-sm leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                      {task.title}
-                    </span>
-                  )}
-                </div>
-                {/* Row 2: domain badge + actions (below title) */}
-                {editingTaskId !== task.id && (
-                  <div className="flex items-center gap-1 mt-1.5 pl-6 md:pl-10">
-                    {cfg && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: `${cfg.color}20`, color: cfg.color }}
-                      >
-                        {cfg.label}
-                      </span>
-                    )}
-                    <div className="flex-1" />
-                    <button
-                      className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500"
-                      onClick={() => startEditTask(task)}
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      className={`p-1 rounded transition-colors ${
-                        isPinned ? 'text-pink-500 hover:text-pink-600' : 'text-slate-300 hover:text-pink-400'
-                      }`}
-                      onClick={() => pinToTop3(task.title)}
-                      title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
-                    >
-                      <Star size={13} fill={isPinned ? 'currentColor' : 'none'} />
-                    </button>
-                    <button
-                      className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400"
-                      onClick={() => deleteTask(task.id)}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={plan.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2 mb-4">
+              {plan.tasks.map((task, idx) => (
+                <SortableTaskItem
+                  key={task.id}
+                  task={task}
+                  idx={idx}
+                  total={plan.tasks.length}
+                  isEditing={editingTaskId === task.id}
+                  editTaskTitle={editTaskTitle}
+                  editTaskDomain={editTaskDomain}
+                  isPinned={plan.topPriorities.includes(task.title)}
+                  domains={domains}
+                  onToggle={() => toggleTask(task.id)}
+                  onMove={moveTask}
+                  onStartEdit={() => startEditTask(task)}
+                  onSaveEdit={saveEditTask}
+                  onCancelEdit={() => setEditingTaskId(null)}
+                  onDelete={() => deleteTask(task.id)}
+                  onPin={() => pinToTop3(task.title)}
+                  onEditTitleChange={setEditTaskTitle}
+                  onEditDomainChange={setEditTaskDomain}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
 
         <div className="flex gap-2">
           <input
@@ -447,6 +397,136 @@ export default function DailyPlan() {
         />
       </div>
 
+    </div>
+  );
+}
+
+// ── Sortable task item ────────────────────────────────────────────────────────
+
+interface SortableTaskItemProps {
+  task: DailyTask;
+  idx: number;
+  total: number;
+  isEditing: boolean;
+  editTaskTitle: string;
+  editTaskDomain: Domain;
+  isPinned: boolean;
+  domains: Domain[];
+  onToggle: () => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onPin: () => void;
+  onEditTitleChange: (v: string) => void;
+  onEditDomainChange: (v: Domain) => void;
+}
+
+function SortableTaskItem({
+  task, idx, total, isEditing, editTaskTitle, editTaskDomain,
+  isPinned, domains, onToggle, onMove, onStartEdit, onSaveEdit,
+  onCancelEdit, onDelete, onPin, onEditTitleChange, onEditDomainChange,
+}: SortableTaskItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const cfg = task.domain ? DOMAIN_CONFIG[task.domain] : null;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group p-3 rounded-lg border ${
+        task.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      {/* Row 1: drag handle + checkbox + title */}
+      <div className="flex items-start gap-2">
+        {/* Drag handle */}
+        <button
+          className="flex-shrink-0 mt-0.5 p-0.5 rounded text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+          {...attributes}
+          {...listeners}
+          tabIndex={-1}
+        >
+          <GripVertical size={15} />
+        </button>
+
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={onToggle}
+          className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+          style={cfg ? { accentColor: cfg.color } : {}}
+        />
+        {isEditing ? (
+          <div className="flex flex-1 flex-col gap-1">
+            <input
+              autoFocus
+              className="input flex-1 text-sm py-0.5"
+              value={editTaskTitle}
+              onChange={(e) => onEditTitleChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSaveEdit();
+                if (e.key === 'Escape') onCancelEdit();
+              }}
+            />
+            <div className="flex gap-1">
+              <select
+                className="select flex-1 text-xs py-0.5"
+                value={editTaskDomain}
+                onChange={(e) => onEditDomainChange(e.target.value as Domain)}
+              >
+                {domains.map((d) => (
+                  <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+                ))}
+              </select>
+              <button className="btn-primary text-xs px-2 py-0.5" onClick={onSaveEdit}>저장</button>
+              <button className="btn-secondary text-xs px-2 py-0.5" onClick={onCancelEdit}>취소</button>
+            </div>
+          </div>
+        ) : (
+          <span className={`flex-1 text-sm leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+            {task.title}
+          </span>
+        )}
+      </div>
+
+      {/* Row 2: domain badge + actions */}
+      {!isEditing && (
+        <div className="flex items-center gap-1 mt-1.5 pl-10">
+          {cfg && (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: `${cfg.color}20`, color: cfg.color }}
+            >
+              {cfg.label}
+            </span>
+          )}
+          <div className="flex-1" />
+          <button className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500" onClick={onStartEdit}>
+            <Edit2 size={13} />
+          </button>
+          <button
+            className={`p-1 rounded transition-colors ${
+              isPinned ? 'text-pink-500 hover:text-pink-600' : 'text-slate-300 hover:text-pink-400'
+            }`}
+            onClick={onPin}
+            title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
+          >
+            <Star size={13} fill={isPinned ? 'currentColor' : 'none'} />
+          </button>
+          <button className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400" onClick={onDelete}>
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
