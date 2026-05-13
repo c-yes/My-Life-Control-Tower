@@ -10,8 +10,24 @@ import {
   DAYS_OF_WEEK,
   formatDateDisplay,
 } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, Edit2, GripVertical } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function WeeklyPlan() {
   const {
@@ -119,6 +135,27 @@ export default function WeeklyPlan() {
     });
     setEditingGoalId(null);
   }
+
+  function handleGoalDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const allItems = useStore.getState().weeklyPlanItems;
+    const weekItems = allItems.filter((i) => i.year === year && i.week === week);
+    const oldIdx = weekItems.findIndex((i) => i.id === active.id);
+    const newIdx = weekItems.findIndex((i) => i.id === over.id);
+    const reordered = arrayMove(weekItems, oldIdx, newIdx);
+    const iter = reordered[Symbol.iterator]();
+    useStore.setState({
+      weeklyPlanItems: allItems.map((i) =>
+        i.year === year && i.week === week ? (iter.next().value ?? i) : i
+      ),
+    });
+  }
+
+  const goalSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
 
   // Task appears in a day column if daysOfWeek includes it, else fall back to dayOfWeek
   function getTasksForDay(dayIdx: number) {
@@ -330,90 +367,37 @@ export default function WeeklyPlan() {
       {/* Weekly Goals (plan items) */}
       <div className="card">
         <h4 className="font-semibold text-slate-800 mb-3">이번 주 목표</h4>
-        <div className="space-y-2 mb-3">
-          {thisWeekGoals.length === 0 && (
-            <p className="text-xs text-slate-400">이번 주 목표를 작성해보세요.</p>
-          )}
-          {thisWeekGoals.map((item) => {
-            const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
-            return (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                  item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
-                }`}
-                style={cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}}
-              >
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  onChange={() => updateWeeklyPlanItem(item.id, { completed: !item.completed })}
-                  className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
-                  style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
-                />
-                {editingGoalId === item.id ? (
-                  <div className="flex-1 flex gap-2">
-                    <input
-                      autoFocus
-                      className="input flex-1 text-sm py-0.5"
-                      value={editGoalTitle}
-                      onChange={(e) => setEditGoalTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveGoalEdit();
-                        if (e.key === 'Escape') setEditingGoalId(null);
-                      }}
-                    />
-                    <select
-                      className="select text-sm py-0.5"
-                      value={editGoalDomain}
-                      onChange={(e) => setEditGoalDomain(e.target.value as Domain | '')}
-                    >
-                      <option value="">도메인 없음</option>
-                      {domains.map((d) => (
-                        <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
-                      ))}
-                    </select>
-                    <button className="btn-primary text-xs px-2 py-0.5" onClick={saveGoalEdit}>저장</button>
-                    <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingGoalId(null)}>취소</button>
-                  </div>
-                ) : (
-                  <>
-                    <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                      {item.title}
-                    </span>
-                    {cfg && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: `${cfg.color}20`, color: cfg.color }}
-                      >
-                        {cfg.label}
-                      </span>
-                    )}
-                  </>
-                )}
-                {editingGoalId !== item.id && (
-                  <button
-                    className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
-                    onClick={() => {
-                      setEditingGoalId(item.id);
-                      setEditGoalTitle(item.title);
-                      setEditGoalDomain(item.domain ?? '');
-                    }}
-                  >
-                    <Edit2 size={13} />
-                  </button>
-                )}
-                <button
-                  className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                  onClick={() => deleteWeeklyPlanItem(item.id)}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex gap-2">
+        {thisWeekGoals.length === 0 && (
+          <p className="text-xs text-slate-400 mb-3">이번 주 목표를 작성해보세요.</p>
+        )}
+        <DndContext sensors={goalSensors} collisionDetection={closestCenter} onDragEnd={handleGoalDragEnd}>
+          <SortableContext items={thisWeekGoals.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2 mb-3">
+              {thisWeekGoals.map((item) => {
+                const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
+                return (
+                  <SortableWeeklyGoalItem
+                    key={item.id}
+                    item={item}
+                    cfg={cfg}
+                    isEditing={editingGoalId === item.id}
+                    editTitle={editGoalTitle}
+                    editDomain={editGoalDomain}
+                    domains={domains}
+                    onToggle={() => updateWeeklyPlanItem(item.id, { completed: !item.completed })}
+                    onStartEdit={() => { setEditingGoalId(item.id); setEditGoalTitle(item.title); setEditGoalDomain(item.domain ?? ''); }}
+                    onSaveEdit={saveGoalEdit}
+                    onCancelEdit={() => setEditingGoalId(null)}
+                    onDelete={() => deleteWeeklyPlanItem(item.id)}
+                    onEditTitleChange={setEditGoalTitle}
+                    onEditDomainChange={(v) => setEditGoalDomain(v as Domain | '')}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+        <div className="flex gap-2 mt-3">
           <input
             className="input flex-1"
             placeholder="이번 주 목표 추가..."
@@ -589,6 +573,98 @@ export default function WeeklyPlan() {
           onChange={(e) => setWeeklyFeedback(year, week, e.target.value)}
         />
       </div>
+    </div>
+  );
+}
+
+// ── Sortable weekly goal item ─────────────────────────────────────────────────
+
+function SortableWeeklyGoalItem({
+  item, cfg, isEditing, editTitle, editDomain, domains,
+  onToggle, onStartEdit, onSaveEdit, onCancelEdit, onDelete,
+  onEditTitleChange, onEditDomainChange,
+}: {
+  item: { id: string; title: string; completed: boolean; domain?: string };
+  cfg: { color: string; label: string } | null;
+  isEditing: boolean;
+  editTitle: string;
+  editDomain: string;
+  domains: Domain[];
+  onToggle: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onEditTitleChange: (v: string) => void;
+  onEditDomainChange: (v: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    ...(cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}),
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={dragStyle}
+      className={`flex items-center gap-2 p-2.5 rounded-lg border ${
+        item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        className="flex-shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+        {...attributes} {...listeners} tabIndex={-1}
+      >
+        <GripVertical size={14} />
+      </button>
+      <input
+        type="checkbox"
+        checked={item.completed}
+        onChange={onToggle}
+        className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+        style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
+      />
+      {isEditing ? (
+        <div className="flex-1 flex gap-2">
+          <input
+            autoFocus
+            className="input flex-1 text-sm py-0.5"
+            value={editTitle}
+            onChange={(e) => onEditTitleChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit(); if (e.key === 'Escape') onCancelEdit(); }}
+          />
+          <select
+            className="select text-sm py-0.5"
+            value={editDomain}
+            onChange={(e) => onEditDomainChange(e.target.value)}
+          >
+            <option value="">도메인 없음</option>
+            {domains.map((d) => <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>)}
+          </select>
+          <button className="btn-primary text-xs px-2 py-0.5" onClick={onSaveEdit}>저장</button>
+          <button className="btn-secondary text-xs px-2 py-0.5" onClick={onCancelEdit}>취소</button>
+        </div>
+      ) : (
+        <>
+          <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+            {item.title}
+          </span>
+          {cfg && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: `${cfg.color}20`, color: cfg.color }}>
+              {cfg.label}
+            </span>
+          )}
+          <button className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0" onClick={onStartEdit}>
+            <Edit2 size={13} />
+          </button>
+          <button className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0" onClick={onDelete}>
+            <Trash2 size={13} />
+          </button>
+        </>
+      )}
     </div>
   );
 }

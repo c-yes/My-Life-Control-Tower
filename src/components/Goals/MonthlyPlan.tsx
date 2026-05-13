@@ -2,7 +2,23 @@ import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId, getCurrentYear, getCurrentMonth, MONTH_NAMES } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, ExternalLink, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, ExternalLink, Edit2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function MonthlyPlan() {
   const {
@@ -100,10 +116,48 @@ export default function MonthlyPlan() {
 
   const years = [getCurrentYear() - 1, getCurrentYear(), getCurrentYear() + 1];
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  function handleGoalDragEnd(event: DragEndEvent, domain: Domain) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const allGoals = useStore.getState().monthlyGoals;
+    const subset = allGoals.filter((g) => g.domain === domain && g.year === year && g.month === month);
+    const oldIdx = subset.findIndex((g) => g.id === active.id);
+    const newIdx = subset.findIndex((g) => g.id === over.id);
+    const reordered = arrayMove(subset, oldIdx, newIdx);
+    const iter = reordered[Symbol.iterator]();
+    useStore.setState({
+      monthlyGoals: allGoals.map((g) =>
+        g.domain === domain && g.year === year && g.month === month ? (iter.next().value ?? g) : g
+      ),
+    });
+  }
+
+  function handlePlanItemDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const allItems = useStore.getState().monthlyPlanItems;
+    const subset = allItems.filter((i) => i.year === year && i.month === month);
+    const oldIdx = subset.findIndex((i) => i.id === active.id);
+    const newIdx = subset.findIndex((i) => i.id === over.id);
+    const reordered = arrayMove(subset, oldIdx, newIdx);
+    const iter = reordered[Symbol.iterator]();
+    useStore.setState({
+      monthlyPlanItems: allItems.map((i) =>
+        i.year === year && i.month === month ? (iter.next().value ?? i) : i
+      ),
+    });
+  }
+
   return (
     <div className="space-y-6 fade-in">
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-2">
+
         <div className="flex items-center gap-2">
           <select className="select" value={year} onChange={(e) => setYear(Number(e.target.value))}>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -217,100 +271,35 @@ export default function MonthlyPlan() {
               </span>
             </div>
 
-            <div className="space-y-2">
-              {domainGoals.map((goal) => {
-                const linkedAnnual = goal.annualGoalId
-                  ? annualGoals.find((ag) => ag.id === goal.annualGoalId)
-                  : null;
-
-                if (editingId === goal.id) {
-                  return (
-                    <div key={goal.id} className="p-3 rounded-lg border border-pink-200 bg-pink-50 space-y-2">
-                      <input
-                        className="input"
-                        value={editForm.title}
-                        autoFocus
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleGoalDragEnd(e, domain)}>
+              <SortableContext items={domainGoals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {domainGoals.map((goal) => {
+                    const linkedAnnual = goal.annualGoalId
+                      ? annualGoals.find((ag) => ag.id === goal.annualGoalId)
+                      : null;
+                    return (
+                      <SortableMonthlyGoalItem
+                        key={goal.id}
+                        goal={goal}
+                        cfg={cfg}
+                        linkedAnnual={linkedAnnual ?? null}
+                        isEditing={editingId === goal.id}
+                        editForm={editForm}
+                        domains={domains}
+                        yearAnnualGoals={yearAnnualGoals}
+                        onToggle={() => updateMonthlyGoal(goal.id, { completed: !goal.completed })}
+                        onStartEdit={() => startEdit(goal)}
+                        onSaveEdit={saveEdit}
+                        onCancelEdit={() => setEditingId(null)}
+                        onDelete={() => deleteMonthlyGoal(goal.id)}
+                        onEditFormChange={setEditForm}
                       />
-                      <select
-                        className="select w-full"
-                        value={editForm.domain}
-                        onChange={(e) => setEditForm({ ...editForm, domain: e.target.value as Domain })}
-                      >
-                        {domains.map((d) => (
-                          <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
-                        ))}
-                      </select>
-                      <select
-                        className="select w-full"
-                        value={editForm.annualGoalId}
-                        onChange={(e) => setEditForm({ ...editForm, annualGoalId: e.target.value })}
-                      >
-                        <option value="">No linked annual goal</option>
-                        {yearAnnualGoals.map((ag) => (
-                          <option key={ag.id} value={ag.id}>{ag.title}</option>
-                        ))}
-                      </select>
-                      <div className="flex gap-2">
-                        <button className="btn-primary flex items-center gap-1 text-xs" onClick={saveEdit}>
-                          <Check size={12} /> Save
-                        </button>
-                        <button className="btn-secondary flex items-center gap-1 text-xs" onClick={() => setEditingId(null)}>
-                          <X size={12} /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={goal.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                      goal.completed
-                        ? 'bg-slate-50 border-slate-100'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={goal.completed}
-                      onChange={() => updateMonthlyGoal(goal.id, { completed: !goal.completed })}
-                      className="mt-0.5 w-4 h-4 rounded cursor-pointer"
-                      style={{ accentColor: cfg.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span
-                        className={`text-sm font-medium ${
-                          goal.completed ? 'line-through text-slate-400' : 'text-slate-800'
-                        }`}
-                      >
-                        {goal.title}
-                      </span>
-                      {linkedAnnual && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <ExternalLink size={11} className="text-slate-400" />
-                          <span className="text-xs text-slate-400">{linkedAnnual.title}</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
-                      onClick={() => startEdit(goal)}
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                      onClick={() => deleteMonthlyGoal(goal.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         );
       })}
@@ -326,86 +315,29 @@ export default function MonthlyPlan() {
           {/* Plan Items */}
           <div className="card">
             <h4 className="font-semibold text-slate-800 mb-3">이달의 실행 계획</h4>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePlanItemDragEnd}>
+              <SortableContext items={planItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2 mb-3">
-              {planItems.map((item) => {
-                const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-center gap-3 p-2.5 rounded-lg border ${
-                      item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
-                    }`}
-                    style={cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.completed}
-                      onChange={() => updateMonthlyPlanItem(item.id, { completed: !item.completed })}
-                      className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
-                      style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
-                    />
-                    {editingPlanId === item.id ? (
-                      <div className="flex-1 flex gap-2">
-                        <input
-                          autoFocus
-                          className="input flex-1 text-sm py-0.5"
-                          value={editPlanTitle}
-                          onChange={(e) => setEditPlanTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') savePlanEdit();
-                            if (e.key === 'Escape') setEditingPlanId(null);
-                          }}
-                        />
-                        <select
-                          className="select text-sm py-0.5"
-                          value={editPlanDomain}
-                          onChange={(e) => setEditPlanDomain(e.target.value as Domain | '')}
-                        >
-                          <option value="">도메인 없음</option>
-                          {domains.map((d) => (
-                            <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
-                          ))}
-                        </select>
-                        <button className="btn-primary text-xs px-2 py-0.5" onClick={savePlanEdit}>저장</button>
-                        <button className="btn-secondary text-xs px-2 py-0.5" onClick={() => setEditingPlanId(null)}>취소</button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                          {item.title}
-                        </span>
-                        {cfg && (
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                            style={{ background: `${cfg.color}20`, color: cfg.color }}
-                          >
-                            {cfg.label}
-                          </span>
-                        )}
-                      </>
-                    )}
-                    {editingPlanId !== item.id && (
-                      <button
-                        className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
-                        onClick={() => {
-                          setEditingPlanId(item.id);
-                          setEditPlanTitle(item.title);
-                          setEditPlanDomain(item.domain ?? '');
-                        }}
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                    )}
-                    <button
-                      className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                      onClick={() => deleteMonthlyPlanItem(item.id)}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                );
-              })}
+              {planItems.map((item) => (
+                <SortableMonthlyPlanItem
+                  key={item.id}
+                  item={item}
+                  isEditing={editingPlanId === item.id}
+                  editTitle={editPlanTitle}
+                  editDomain={editPlanDomain}
+                  domains={domains}
+                  onToggle={() => updateMonthlyPlanItem(item.id, { completed: !item.completed })}
+                  onStartEdit={() => { setEditingPlanId(item.id); setEditPlanTitle(item.title); setEditPlanDomain(item.domain ?? ''); }}
+                  onSaveEdit={savePlanEdit}
+                  onCancelEdit={() => setEditingPlanId(null)}
+                  onDelete={() => deleteMonthlyPlanItem(item.id)}
+                  onEditTitleChange={setEditPlanTitle}
+                  onEditDomainChange={(v) => setEditPlanDomain(v as Domain | '')}
+                />
+              ))}
             </div>
+              </SortableContext>
+            </DndContext>
             <div className="flex gap-2">
               <input
                 className="input flex-1"
@@ -443,6 +375,205 @@ export default function MonthlyPlan() {
           onChange={(e) => setMonthlyFeedback(year, month, e.target.value)}
         />
       </div>
+    </div>
+  );
+}
+
+// ── Sortable monthly goal item ────────────────────────────────────────────────
+
+function SortableMonthlyGoalItem({
+  goal, cfg, linkedAnnual, isEditing, editForm, domains, yearAnnualGoals,
+  onToggle, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onEditFormChange,
+}: {
+  goal: { id: string; title: string; completed: boolean; domain: Domain; annualGoalId?: string };
+  cfg: { color: string; label: string };
+  linkedAnnual: { id: string; title: string } | null;
+  isEditing: boolean;
+  editForm: { title: string; domain: Domain; annualGoalId: string };
+  domains: Domain[];
+  yearAnnualGoals: { id: string; title: string }[];
+  onToggle: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onEditFormChange: (form: { title: string; domain: Domain; annualGoalId: string }) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: goal.id });
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={dragStyle}
+      className={`flex items-start gap-2 p-3 rounded-xl border ${
+        goal.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        className="flex-shrink-0 p-0.5 mt-0.5 rounded text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+        {...attributes} {...listeners} tabIndex={-1}
+      >
+        <GripVertical size={14} />
+      </button>
+      <input
+        type="checkbox"
+        checked={goal.completed}
+        onChange={onToggle}
+        className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+        style={{ accentColor: cfg.color }}
+      />
+      {isEditing ? (
+        <div className="flex-1 space-y-2">
+          <input
+            autoFocus
+            className="input w-full text-sm py-1"
+            value={editForm.title}
+            onChange={(e) => onEditFormChange({ ...editForm, title: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit(); if (e.key === 'Escape') onCancelEdit(); }}
+          />
+          <select
+            className="select w-full text-sm"
+            value={editForm.domain}
+            onChange={(e) => onEditFormChange({ ...editForm, domain: e.target.value as Domain })}
+          >
+            {domains.map((d) => <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>)}
+          </select>
+          <select
+            className="select w-full text-sm"
+            value={editForm.annualGoalId}
+            onChange={(e) => onEditFormChange({ ...editForm, annualGoalId: e.target.value })}
+          >
+            <option value="">No linked annual goal</option>
+            {yearAnnualGoals.map((ag) => <option key={ag.id} value={ag.id}>{ag.title}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <button className="btn-primary text-xs px-2 py-0.5 flex items-center gap-1" onClick={onSaveEdit}>
+              <Check size={12} /> Save
+            </button>
+            <button className="btn-secondary text-xs px-2 py-0.5 flex items-center gap-1" onClick={onCancelEdit}>
+              <X size={12} /> Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 min-w-0">
+            <span className={`text-sm ${goal.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+              {goal.title}
+            </span>
+            {linkedAnnual && (
+              <div className="text-xs text-slate-400 flex items-center gap-0.5 mt-0.5 truncate">
+                <ExternalLink size={10} />
+                <span className="truncate">{linkedAnnual.title}</span>
+              </div>
+            )}
+          </div>
+          <button className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0" onClick={onStartEdit}>
+            <Edit2 size={13} />
+          </button>
+          <button className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0" onClick={onDelete}>
+            <Trash2 size={13} />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Sortable monthly plan item ────────────────────────────────────────────────
+
+function SortableMonthlyPlanItem({
+  item, isEditing, editTitle, editDomain, domains,
+  onToggle, onStartEdit, onSaveEdit, onCancelEdit, onDelete,
+  onEditTitleChange, onEditDomainChange,
+}: {
+  item: { id: string; title: string; completed: boolean; domain?: Domain };
+  isEditing: boolean;
+  editTitle: string;
+  editDomain: Domain | '';
+  domains: Domain[];
+  onToggle: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onEditTitleChange: (v: string) => void;
+  onEditDomainChange: (v: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    ...(cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}),
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={dragStyle}
+      className={`flex items-center gap-2 p-2.5 rounded-lg border ${
+        item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        className="flex-shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+        {...attributes} {...listeners} tabIndex={-1}
+      >
+        <GripVertical size={14} />
+      </button>
+      <input
+        type="checkbox"
+        checked={item.completed}
+        onChange={onToggle}
+        className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+        style={{ accentColor: cfg ? cfg.color : '#c45c8a' }}
+      />
+      {isEditing ? (
+        <div className="flex-1 flex gap-2">
+          <input
+            autoFocus
+            className="input flex-1 text-sm py-0.5"
+            value={editTitle}
+            onChange={(e) => onEditTitleChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSaveEdit(); if (e.key === 'Escape') onCancelEdit(); }}
+          />
+          <select
+            className="select text-sm py-0.5"
+            value={editDomain}
+            onChange={(e) => onEditDomainChange(e.target.value)}
+          >
+            <option value="">도메인 없음</option>
+            {domains.map((d) => <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>)}
+          </select>
+          <button className="btn-primary text-xs px-2 py-0.5" onClick={onSaveEdit}>저장</button>
+          <button className="btn-secondary text-xs px-2 py-0.5" onClick={onCancelEdit}>취소</button>
+        </div>
+      ) : (
+        <>
+          <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+            {item.title}
+          </span>
+          {cfg && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+              style={{ background: `${cfg.color}20`, color: cfg.color }}>
+              {cfg.label}
+            </span>
+          )}
+          <button className="p-1 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0" onClick={onStartEdit}>
+            <Edit2 size={13} />
+          </button>
+          <button className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0" onClick={onDelete}>
+            <Trash2 size={13} />
+          </button>
+        </>
+      )}
     </div>
   );
 }

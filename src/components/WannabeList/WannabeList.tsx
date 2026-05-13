@@ -2,7 +2,23 @@ import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import { generateId } from '../../utils/helpers';
-import { Plus, Trash2, Check, X, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Check, X, Edit2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function WannabeList() {
   const { wannabeItems, addWannabeItem, updateWannabeItem, deleteWannabeItem, wannabeNotes, setWannabeNotes } = useStore();
@@ -11,6 +27,27 @@ export default function WannabeList() {
   const [form, setForm] = useState({ title: '', description: '', category: '' as Domain | '' });
   const [editForm, setEditForm] = useState({ title: '', description: '', category: '' as Domain | '' });
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  function handleCategoryDragEnd(event: DragEndEvent, categoryKey: string) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const allItems = useStore.getState().wannabeItems;
+    const subset = allItems.filter((i) => (normalizeCategoryToKey(i.category ?? '') || '기타') === categoryKey);
+    const oldIdx = subset.findIndex((i) => i.id === active.id);
+    const newIdx = subset.findIndex((i) => i.id === over.id);
+    const reordered = arrayMove(subset, oldIdx, newIdx);
+    const iter = reordered[Symbol.iterator]();
+    useStore.setState({
+      wannabeItems: allItems.map((i) =>
+        (normalizeCategoryToKey(i.category ?? '') || '기타') === categoryKey ? (iter.next().value ?? i) : i
+      ),
+    });
+  }
 
   function handleAdd() {
     if (!form.title.trim()) return;
@@ -166,89 +203,27 @@ export default function WannabeList() {
                 {items.filter((i) => i.completed).length}/{items.length}
               </span>
             </div>
-            <div className="space-y-2">
-              {items.map((item) => {
-                const itemDomain = getItemDomain(item);
-                const itemCfg = itemDomain ? DOMAIN_CONFIG[itemDomain] : null;
-                if (editingId === item.id) {
-                  return (
-                    <div key={item.id} className="card border-pink-200 bg-pink-50 space-y-2">
-                      <input
-                        className="input"
-                        value={editForm.title}
-                        autoFocus
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                      />
-                      <select
-                        className="select w-full"
-                        value={editForm.category}
-                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Domain | '' })}
-                      >
-                        <option value="">카테고리 없음</option>
-                        {domains.map((d) => (
-                          <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
-                        ))}
-                      </select>
-                      <textarea
-                        className="textarea h-16"
-                        placeholder="설명"
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      />
-                      <div className="flex gap-2">
-                        <button className="btn-primary flex items-center gap-1 text-xs" onClick={saveEdit}>
-                          <Check size={12} /> Save
-                        </button>
-                        <button className="btn-secondary flex items-center gap-1 text-xs" onClick={() => setEditingId(null)}>
-                          <X size={12} /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${
-                      item.completed
-                        ? 'bg-slate-50 border-slate-100'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                    style={itemCfg ? { borderLeftWidth: 3, borderLeftColor: itemCfg.color } : {}}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.completed}
-                      onChange={() => updateWannabeItem(item.id, { completed: !item.completed })}
-                      className="mt-0.5 w-4 h-4 rounded cursor-pointer"
-                      style={{ accentColor: itemCfg ? itemCfg.color : '#ec4899' }}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleCategoryDragEnd(e, cat)}>
+              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {items.map((item) => (
+                    <SortableWannabeItem
+                      key={item.id}
+                      item={item}
+                      isEditing={editingId === item.id}
+                      editForm={editForm}
+                      domains={domains}
+                      onToggle={() => updateWannabeItem(item.id, { completed: !item.completed })}
+                      onStartEdit={() => startEdit(item)}
+                      onSaveEdit={saveEdit}
+                      onCancelEdit={() => setEditingId(null)}
+                      onDelete={() => deleteWannabeItem(item.id)}
+                      onEditFormChange={setEditForm}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                        {item.title}
-                      </p>
-                      {item.description && (
-                        <p className="text-xs text-slate-500 mt-1">{item.description}</p>
-                      )}
-                    </div>
-                    <button
-                      className="p-1.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
-                      onClick={() => startEdit(item)}
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      className="p-1.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
-                      onClick={() => deleteWannabeItem(item.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </div>
         );
       })}
@@ -263,6 +238,124 @@ export default function WannabeList() {
           onChange={(e) => setWannabeNotes(e.target.value)}
         />
       </div>
+    </div>
+  );
+}
+
+// ── Sortable wannabe item ─────────────────────────────────────────────────────
+
+function SortableWannabeItem({
+  item, isEditing, editForm, domains,
+  onToggle, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onEditFormChange,
+}: {
+  item: { id: string; title: string; description: string; completed: boolean; category?: string };
+  isEditing: boolean;
+  editForm: { title: string; description: string; category: Domain | '' };
+  domains: Domain[];
+  onToggle: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onEditFormChange: (form: { title: string; description: string; category: Domain | '' }) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const domainKey = item.category
+    ? (Object.keys(DOMAIN_CONFIG) as Domain[]).find(
+        (d) => d === item.category || DOMAIN_CONFIG[d].label.toLowerCase() === item.category?.toLowerCase()
+      ) ?? null
+    : null;
+  const cfg = domainKey ? DOMAIN_CONFIG[domainKey] : null;
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    ...(cfg ? { borderLeftWidth: 3, borderLeftColor: cfg.color } : {}),
+  };
+
+  if (isEditing) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className="card border-pink-200 bg-pink-50 space-y-2"
+      >
+        <input
+          className="input"
+          value={editForm.title}
+          autoFocus
+          onChange={(e) => onEditFormChange({ ...editForm, title: e.target.value })}
+          onKeyDown={(e) => e.key === 'Enter' && onSaveEdit()}
+        />
+        <select
+          className="select w-full"
+          value={editForm.category}
+          onChange={(e) => onEditFormChange({ ...editForm, category: e.target.value as Domain | '' })}
+        >
+          <option value="">카테고리 없음</option>
+          {domains.map((d) => (
+            <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+          ))}
+        </select>
+        <textarea
+          className="textarea h-16"
+          placeholder="설명"
+          value={editForm.description}
+          onChange={(e) => onEditFormChange({ ...editForm, description: e.target.value })}
+        />
+        <div className="flex gap-2">
+          <button className="btn-primary flex items-center gap-1 text-xs" onClick={onSaveEdit}>
+            <Check size={12} /> Save
+          </button>
+          <button className="btn-secondary flex items-center gap-1 text-xs" onClick={onCancelEdit}>
+            <X size={12} /> Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={dragStyle}
+      className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${
+        item.completed ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200 hover:border-slate-300'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        className="flex-shrink-0 p-0.5 mt-0.5 rounded text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+        {...attributes} {...listeners} tabIndex={-1}
+      >
+        <GripVertical size={14} />
+      </button>
+      <input
+        type="checkbox"
+        checked={item.completed}
+        onChange={onToggle}
+        className="mt-0.5 w-4 h-4 rounded cursor-pointer"
+        style={{ accentColor: cfg ? cfg.color : '#ec4899' }}
+      />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium ${item.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+          {item.title}
+        </p>
+        {item.description && (
+          <p className="text-xs text-slate-500 mt-1">{item.description}</p>
+        )}
+      </div>
+      <button
+        className="p-1.5 rounded hover:bg-slate-100 text-slate-300 hover:text-slate-500 flex-shrink-0"
+        onClick={onStartEdit}
+      >
+        <Edit2 size={14} />
+      </button>
+      <button
+        className="p-1.5 rounded hover:bg-red-50 text-slate-300 hover:text-red-400 flex-shrink-0"
+        onClick={onDelete}
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 }
