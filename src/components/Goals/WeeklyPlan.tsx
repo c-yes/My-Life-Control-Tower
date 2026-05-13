@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG } from '../../types';
 import {
@@ -157,6 +157,13 @@ export default function WeeklyPlan() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
   );
 
+  const addFormRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (showAddForm && addFormRef.current) {
+      addFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showAddForm]);
+
   // Task appears in a day column if daysOfWeek includes it, else fall back to dayOfWeek
   function getTasksForDay(dayIdx: number) {
     return tasks.filter((t) => {
@@ -210,7 +217,7 @@ export default function WeeklyPlan() {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="card">
+        <div className="card" ref={addFormRef}>
           <h3 className="font-bold text-slate-800 mb-4">New Weekly Task</h3>
           <div className="space-y-3">
             <input
