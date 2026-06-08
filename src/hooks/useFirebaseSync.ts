@@ -7,6 +7,7 @@ import { useStore } from '../store/useStore';
 export function useFirebaseSync(user: User | null) {
   const store = useStore();
   const isRemoteUpdate = useRef(false);
+  const initialLoadComplete = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -15,12 +16,18 @@ export function useFirebaseSync(user: User | null) {
       unsubscribeRef.current = null;
     }
 
+    // Reset initial load flag when user changes
+    initialLoadComplete.current = false;
+
     if (!user) return;
 
     const docRef = doc(db, 'users', user.uid);
 
     // Listen for remote changes
     const unsubscribe = onSnapshot(docRef, (snap) => {
+      // Mark initial load complete regardless of whether data exists
+      initialLoadComplete.current = true;
+
       if (!snap.exists()) return;
       const data = snap.data();
       if (!data) return;
@@ -50,7 +57,8 @@ export function useFirebaseSync(user: User | null) {
       if (data.journalEntries) useStore.setState({ journalEntries: data.journalEntries });
       if (data.ddayItems) useStore.setState({ ddayItems: data.ddayItems });
 
-      isRemoteUpdate.current = false;
+      // Reset after debounce window to prevent write-back loop
+      setTimeout(() => { isRemoteUpdate.current = false; }, 1500);
     });
 
     unsubscribeRef.current = unsubscribe;
@@ -61,7 +69,9 @@ export function useFirebaseSync(user: User | null) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!user || isRemoteUpdate.current) return;
+    // Don't write until Firestore initial load is complete — prevents overwriting
+    // cloud data with empty local state after cache clear
+    if (!user || isRemoteUpdate.current || !initialLoadComplete.current) return;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
