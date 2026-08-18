@@ -8,6 +8,9 @@ export function useFirebaseSync(user: User | null) {
   const store = useStore();
   const isRemoteUpdate = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  // Tracks the timestamp we stamped on our most recent local write intent.
+  // onSnapshot arrivals older than this are stale echoes and must be ignored.
+  const lastLocalWriteAt = useRef(0);
 
   useEffect(() => {
     if (unsubscribeRef.current) {
@@ -24,6 +27,11 @@ export function useFirebaseSync(user: User | null) {
       if (!snap.exists()) return;
       const data = snap.data();
       if (!data) return;
+
+      // Skip snapshots that are older than our latest local write.
+      // This prevents Firestore echoes of previous writes from overwriting
+      // local state (e.g. a reorder) that was saved more recently.
+      if (data._lastWrite && data._lastWrite < lastLocalWriteAt.current) return;
 
       isRemoteUpdate.current = true;
       const s = useStore.getState();
@@ -63,12 +71,19 @@ export function useFirebaseSync(user: User | null) {
   useEffect(() => {
     if (!user || isRemoteUpdate.current) return;
 
+    // Record intent to write now so onSnapshot can compare immediately.
+    const writeIntent = Date.now();
+    lastLocalWriteAt.current = writeIntent;
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
       const s = useStore.getState();
       const docRef = doc(db, 'users', user.uid);
+      const writeTime = Date.now();
+      lastLocalWriteAt.current = writeTime;
       setDoc(docRef, {
+        _lastWrite: writeTime,
         lifeCompass: s.lifeCompass,
         annualGoals: s.annualGoals,
         monthlyGoals: s.monthlyGoals,
