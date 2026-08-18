@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Domain, DOMAIN_CONFIG, DailyPlanData, DailyTask } from '../../types';
@@ -46,10 +46,17 @@ export default function DailyPlan() {
   const [plan, setPlan] = useState<DailyPlanData>(existing ?? emptyPlan(selectedDate));
 
   useEffect(() => {
+    // Flush any pending debounced save for the previous date before switching
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      upsertDailyPlan(latestPlanRef.current);
+    }
     const found = dailyPlans.find((p) => p.date === selectedDate);
-    setPlan(found ?? emptyPlan(selectedDate));
+    const next = found ?? emptyPlan(selectedDate);
+    latestPlanRef.current = next;
+    setPlan(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]); // dailyPlans intentionally omitted: including it causes rapid onChange handlers (e.g. paste) to overwrite each other via stale closure
+  }, [selectedDate]); // dailyPlans intentionally omitted: including it re-renders mid-IME composition and clears Korean input
 
   // Get selected date's week plan items for reference
   const selectedDateObj = new Date(selectedDate);
@@ -57,21 +64,36 @@ export default function DailyPlan() {
   const week = getWeekForDate(selectedDate);
   const thisWeekPlanItems = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
 
+  const latestPlanRef = useRef<DailyPlanData>(plan);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   function save(updated: DailyPlanData) {
+    latestPlanRef.current = updated;
+    setPlan(updated);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      upsertDailyPlan(latestPlanRef.current);
+    }, 300);
+  }
+
+  // Flush pending save on date change so previous date's data isn't lost
+  function saveImmediate(updated: DailyPlanData) {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    latestPlanRef.current = updated;
     setPlan(updated);
     upsertDailyPlan(updated);
   }
 
   function updatePriority(idx: number, value: string) {
-    const priorities = [...plan.topPriorities];
+    const priorities = [...latestPlanRef.current.topPriorities];
     priorities[idx] = value;
-    save({ ...plan, topPriorities: priorities });
+    save({ ...latestPlanRef.current, topPriorities: priorities });
   }
 
   function togglePriorityDone(idx: number) {
     const done = [...(plan.topPriorityDone ?? [false, false, false])];
     done[idx] = !done[idx];
-    save({ ...plan, topPriorityDone: done });
+    saveImmediate({ ...plan, topPriorityDone: done });
   }
 
   function addTask() {
@@ -82,7 +104,7 @@ export default function DailyPlan() {
       completed: false,
       domain: newTaskDomain,
     };
-    save({ ...plan, tasks: [...plan.tasks, newTask] });
+    saveImmediate({ ...latestPlanRef.current, tasks: [...latestPlanRef.current.tasks, newTask] });
     setNewTaskTitle('');
   }
 
@@ -93,35 +115,36 @@ export default function DailyPlan() {
       completed: false,
       domain: 'output',
     };
-    save({ ...plan, tasks: [...plan.tasks, newTask] });
+    saveImmediate({ ...latestPlanRef.current, tasks: [...latestPlanRef.current.tasks, newTask] });
   }
 
   function toggleTask(id: string) {
-    save({
-      ...plan,
-      tasks: plan.tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+    saveImmediate({
+      ...latestPlanRef.current,
+      tasks: latestPlanRef.current.tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
     });
   }
 
   function deleteTask(id: string) {
-    save({ ...plan, tasks: plan.tasks.filter((t) => t.id !== id) });
+    saveImmediate({ ...latestPlanRef.current, tasks: latestPlanRef.current.tasks.filter((t) => t.id !== id) });
   }
 
   function moveTask(id: string, direction: 'up' | 'down') {
-    const idx = plan.tasks.findIndex((t) => t.id === id);
+    const tasks = [...latestPlanRef.current.tasks];
+    const idx = tasks.findIndex((t) => t.id === id);
     const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (newIdx < 0 || newIdx >= plan.tasks.length) return;
-    const tasks = [...plan.tasks];
+    if (newIdx < 0 || newIdx >= tasks.length) return;
     [tasks[idx], tasks[newIdx]] = [tasks[newIdx], tasks[idx]];
-    save({ ...plan, tasks });
+    saveImmediate({ ...latestPlanRef.current, tasks });
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIdx = plan.tasks.findIndex((t) => t.id === active.id);
-    const newIdx = plan.tasks.findIndex((t) => t.id === over.id);
-    save({ ...plan, tasks: arrayMove(plan.tasks, oldIdx, newIdx) });
+    const tasks = latestPlanRef.current.tasks;
+    const oldIdx = tasks.findIndex((t) => t.id === active.id);
+    const newIdx = tasks.findIndex((t) => t.id === over.id);
+    saveImmediate({ ...latestPlanRef.current, tasks: arrayMove(tasks, oldIdx, newIdx) });
   }
 
   const sensors = useSensors(
@@ -137,9 +160,9 @@ export default function DailyPlan() {
 
   function saveEditTask() {
     if (!editingTaskId || !editTaskTitle.trim()) return;
-    save({
-      ...plan,
-      tasks: plan.tasks.map((t) =>
+    saveImmediate({
+      ...latestPlanRef.current,
+      tasks: latestPlanRef.current.tasks.map((t) =>
         t.id === editingTaskId ? { ...t, title: editTaskTitle.trim(), domain: editTaskDomain } : t
       ),
     });
@@ -147,11 +170,11 @@ export default function DailyPlan() {
   }
 
   function pinToTop3(title: string) {
-    const priorities = [...plan.topPriorities];
+    const priorities = [...latestPlanRef.current.topPriorities];
     const existingIdx = priorities.indexOf(title);
     if (existingIdx !== -1) {
       priorities[existingIdx] = '';
-      save({ ...plan, topPriorities: priorities });
+      saveImmediate({ ...latestPlanRef.current, topPriorities: priorities });
       return;
     }
     const emptyIdx = priorities.findIndex((p) => !p.trim());
@@ -160,7 +183,7 @@ export default function DailyPlan() {
     } else {
       priorities[2] = title;
     }
-    save({ ...plan, topPriorities: priorities });
+    saveImmediate({ ...latestPlanRef.current, topPriorities: priorities });
   }
 
   const completedCount = plan.tasks.filter((t) => t.completed).length;
@@ -212,7 +235,7 @@ export default function DailyPlan() {
           className="input w-full"
           placeholder="Write today's affirmation or quote..."
           value={plan.affirmation ?? ''}
-          onChange={(e) => save({ ...plan, affirmation: e.target.value })}
+          onChange={(e) => save({ ...latestPlanRef.current, affirmation: e.target.value })}
         />
       </div>
 
@@ -228,7 +251,7 @@ export default function DailyPlan() {
                   className={`text-3xl transition-transform hover:scale-110 ${
                     plan.mood === i + 1 ? 'scale-125 drop-shadow-md' : 'opacity-60'
                   }`}
-                  onClick={() => save({ ...plan, mood: i + 1 })}
+                  onClick={() => saveImmediate({ ...latestPlanRef.current, mood: i + 1 })}
                   title={`Mood ${i + 1}`}
                 >
                   {emoji}
@@ -244,7 +267,7 @@ export default function DailyPlan() {
               className="textarea h-20 text-sm"
               placeholder="메모..."
               value={plan.moodMemo ?? ''}
-              onChange={(e) => save({ ...plan, moodMemo: e.target.value })}
+              onChange={(e) => save({ ...latestPlanRef.current, moodMemo: e.target.value })}
             />
           </div>
         </div>
@@ -394,7 +417,7 @@ export default function DailyPlan() {
           className="textarea h-28"
           placeholder="How was today? What did I learn? What would I do differently?"
           value={plan.reflection}
-          onChange={(e) => save({ ...plan, reflection: e.target.value })}
+          onChange={(e) => save({ ...latestPlanRef.current, reflection: e.target.value })}
         />
       </div>
 
