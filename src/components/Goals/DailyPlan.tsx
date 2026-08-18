@@ -66,6 +66,7 @@ export default function DailyPlan() {
 
   const latestPlanRef = useRef<DailyPlanData>(plan);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const composingRef = useRef(false);
 
   function save(updated: DailyPlanData) {
     latestPlanRef.current = updated;
@@ -235,7 +236,9 @@ export default function DailyPlan() {
           className="input w-full"
           placeholder="Write today's affirmation or quote..."
           value={plan.affirmation ?? ''}
-          onChange={(e) => save({ ...latestPlanRef.current, affirmation: e.target.value })}
+          onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, affirmation: e.target.value }); }}
+          onCompositionStart={() => { composingRef.current = true; }}
+          onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, affirmation: (e.target as HTMLInputElement).value }); }}
         />
       </div>
 
@@ -267,7 +270,9 @@ export default function DailyPlan() {
               className="textarea h-20 text-sm"
               placeholder="메모..."
               value={plan.moodMemo ?? ''}
-              onChange={(e) => save({ ...latestPlanRef.current, moodMemo: e.target.value })}
+              onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, moodMemo: e.target.value }); }}
+              onCompositionStart={() => { composingRef.current = true; }}
+              onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, moodMemo: (e.target as HTMLTextAreaElement).value }); }}
             />
           </div>
         </div>
@@ -300,7 +305,9 @@ export default function DailyPlan() {
                   className={`input ${done ? 'line-through text-slate-400' : ''}`}
                   placeholder={`Priority ${i + 1}...`}
                   value={p}
-                  onChange={(e) => updatePriority(i, e.target.value)}
+                  onChange={(e) => { if (!composingRef.current) updatePriority(i, e.target.value); }}
+                  onCompositionStart={() => { composingRef.current = true; }}
+                  onCompositionEnd={(e) => { composingRef.current = false; updatePriority(i, (e.target as HTMLInputElement).value); }}
                 />
               </div>
             );
@@ -417,7 +424,9 @@ export default function DailyPlan() {
           className="textarea h-28"
           placeholder="How was today? What did I learn? What would I do differently?"
           value={plan.reflection}
-          onChange={(e) => save({ ...latestPlanRef.current, reflection: e.target.value })}
+          onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, reflection: e.target.value }); }}
+          onCompositionStart={() => { composingRef.current = true; }}
+          onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, reflection: (e.target as HTMLTextAreaElement).value }); }}
         />
       </div>
 
