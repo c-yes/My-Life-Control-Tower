@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { Miracle21Habit, Miracle21Step } from '../../types';
 import { generateId } from '../../utils/helpers';
 import { format, addDays } from 'date-fns';
-import { Check, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Plus, Trash2, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 
 function makeEmptyDays() {
   return Array.from({ length: 21 }, () => ({ completed: false, note: '' }));
@@ -381,29 +381,38 @@ function StepCard({
 
         {/* Start date */}
         {editingDate ? (
-          <input
-            type="date"
-            autoFocus
-            className="text-xs rounded px-1 py-0.5 outline-none border border-orange-400 text-orange-600 bg-orange-50 flex-shrink-0"
-            value={dateDraft}
-            onChange={(e) => setDateDraft(e.target.value)}
-            onBlur={() => {
-              if (dateDraft) onChange({ startDate: dateDraft });
-              setEditingDate(false);
-            }}
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') {
-                if (dateDraft) onChange({ startDate: dateDraft });
-                setEditingDate(false);
-              }
-              if (e.key === 'Escape') setEditingDate(false);
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="date"
+              autoFocus
+              className="text-xs rounded px-1 py-0.5 outline-none border border-orange-400 text-orange-600 bg-orange-50"
+              value={dateDraft}
+              onChange={(e) => setDateDraft(e.target.value)}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                  if (dateDraft) onChange({ startDate: dateDraft });
+                  setEditingDate(false);
+                }
+                if (e.key === 'Escape') setEditingDate(false);
+              }}
+            />
+            <button
+              className="text-green-500 hover:text-green-700 p-0.5"
+              onClick={(e) => { e.stopPropagation(); if (dateDraft) onChange({ startDate: dateDraft }); setEditingDate(false); }}
+            >
+              <Check size={12} />
+            </button>
+            <button
+              className="text-slate-400 hover:text-slate-600 p-0.5"
+              onClick={(e) => { e.stopPropagation(); setEditingDate(false); }}
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         ) : (
-          <span
-            className="text-xs flex-shrink-0 cursor-pointer hover:underline text-slate-400"
+          <button
+            className="flex items-center gap-1 text-xs flex-shrink-0 text-slate-400 hover:text-orange-500 transition-colors"
             title="클릭하여 시작일 수정"
             onClick={(e) => {
               e.stopPropagation();
@@ -413,7 +422,8 @@ function StepCard({
             }}
           >
             {step.startDate}
-          </span>
+            <Edit2 size={10} />
+          </button>
         )}
 
         {/* Progress */}
