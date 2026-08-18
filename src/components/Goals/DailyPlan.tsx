@@ -48,7 +48,8 @@ export default function DailyPlan() {
   useEffect(() => {
     const found = dailyPlans.find((p) => p.date === selectedDate);
     setPlan(found ?? emptyPlan(selectedDate));
-  }, [selectedDate, dailyPlans]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]); // dailyPlans intentionally omitted: including it causes rapid onChange handlers (e.g. paste) to overwrite each other via stale closure
 
   // Get selected date's week plan items for reference
   const selectedDateObj = new Date(selectedDate);
