@@ -33,6 +33,9 @@ export function useFirebaseSync(user: User | null) {
       // local state (e.g. a reorder) that was saved more recently.
       if (data._lastWrite && data._lastWrite < lastLocalWriteAt.current) return;
 
+      // Mark as remote so the write effect skips the Firestore re-write.
+      // Flag is reset inside the write effect (not here) so it stays true
+      // through the async React render + effect cycle.
       isRemoteUpdate.current = true;
       const s = useStore.getState();
 
@@ -57,8 +60,6 @@ export function useFirebaseSync(user: User | null) {
       if (data.weeklyFeedbacks) useStore.setState({ weeklyFeedbacks: data.weeklyFeedbacks });
       if (data.journalEntries) useStore.setState({ journalEntries: data.journalEntries });
       if (data.ddayItems) useStore.setState({ ddayItems: data.ddayItems });
-
-      isRemoteUpdate.current = false;
     });
 
     unsubscribeRef.current = unsubscribe;
@@ -69,7 +70,15 @@ export function useFirebaseSync(user: User | null) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!user || isRemoteUpdate.current) return;
+    if (!user) return;
+
+    // Reset the remote flag HERE (not in onSnapshot) so it stays true through
+    // the React render cycle. This prevents stale snapshot data from being
+    // written back to Firestore by the debounce timer.
+    if (isRemoteUpdate.current) {
+      isRemoteUpdate.current = false;
+      return;
+    }
 
     // Record intent to write now so onSnapshot can compare immediately.
     const writeIntent = Date.now();
