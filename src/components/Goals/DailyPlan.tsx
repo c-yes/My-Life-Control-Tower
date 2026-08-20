@@ -239,6 +239,7 @@ export default function DailyPlan() {
           onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, affirmation: e.target.value }); }}
           onCompositionStart={() => { composingRef.current = true; }}
           onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, affirmation: (e.target as HTMLInputElement).value }); }}
+          onBlur={() => { composingRef.current = false; }}
         />
       </div>
 
@@ -273,6 +274,7 @@ export default function DailyPlan() {
               onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, moodMemo: e.target.value }); }}
               onCompositionStart={() => { composingRef.current = true; }}
               onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, moodMemo: (e.target as HTMLTextAreaElement).value }); }}
+              onBlur={() => { composingRef.current = false; }}
             />
           </div>
         </div>
@@ -308,6 +310,7 @@ export default function DailyPlan() {
                   onChange={(e) => { if (!composingRef.current) updatePriority(i, e.target.value); }}
                   onCompositionStart={() => { composingRef.current = true; }}
                   onCompositionEnd={(e) => { composingRef.current = false; updatePriority(i, (e.target as HTMLInputElement).value); }}
+                  onBlur={() => { composingRef.current = false; }}
                 />
               </div>
             );
@@ -427,6 +430,7 @@ export default function DailyPlan() {
           onChange={(e) => { if (!composingRef.current) save({ ...latestPlanRef.current, reflection: e.target.value }); }}
           onCompositionStart={() => { composingRef.current = true; }}
           onCompositionEnd={(e) => { composingRef.current = false; save({ ...latestPlanRef.current, reflection: (e.target as HTMLTextAreaElement).value }); }}
+          onBlur={() => { composingRef.current = false; }}
         />
       </div>
 
