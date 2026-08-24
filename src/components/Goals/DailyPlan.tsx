@@ -67,7 +67,9 @@ export default function DailyPlan() {
   const latestPlanRef = useRef<DailyPlanData>(plan);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function scheduleTextSave() {
+  function save(updated: DailyPlanData) {
+    latestPlanRef.current = updated;
+    setPlan(updated);
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       upsertDailyPlan(latestPlanRef.current);
@@ -85,8 +87,7 @@ export default function DailyPlan() {
   function updatePriority(idx: number, value: string) {
     const priorities = [...latestPlanRef.current.topPriorities];
     priorities[idx] = value;
-    latestPlanRef.current = { ...latestPlanRef.current, topPriorities: priorities };
-    scheduleTextSave();
+    save({ ...latestPlanRef.current, topPriorities: priorities });
   }
 
   function togglePriorityDone(idx: number) {
@@ -231,11 +232,10 @@ export default function DailyPlan() {
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-2">Affirmation / Quote</h3>
         <input
-          key={`affirmation-${selectedDate}`}
           className="input w-full"
           placeholder="Write today's affirmation or quote..."
-          defaultValue={latestPlanRef.current.affirmation ?? ''}
-          onChange={(e) => { latestPlanRef.current = { ...latestPlanRef.current, affirmation: e.target.value }; scheduleTextSave(); }}
+          value={plan.affirmation ?? ''}
+          onChange={(e) => save({ ...latestPlanRef.current, affirmation: e.target.value })}
         />
       </div>
 
@@ -264,11 +264,10 @@ export default function DailyPlan() {
           </div>
           <div className="flex-1">
             <textarea
-              key={`moodMemo-${selectedDate}`}
               className="textarea h-20 text-sm"
               placeholder="메모..."
-              defaultValue={latestPlanRef.current.moodMemo ?? ''}
-              onChange={(e) => { latestPlanRef.current = { ...latestPlanRef.current, moodMemo: e.target.value }; scheduleTextSave(); }}
+              value={plan.moodMemo ?? ''}
+              onChange={(e) => save({ ...latestPlanRef.current, moodMemo: e.target.value })}
             />
           </div>
         </div>
@@ -298,10 +297,9 @@ export default function DailyPlan() {
                   {done ? <Check size={14} /> : i + 1}
                 </button>
                 <input
-                  key={`priority-${selectedDate}-${i}`}
                   className={`input ${done ? 'line-through text-slate-400' : ''}`}
                   placeholder={`Priority ${i + 1}...`}
-                  defaultValue={p}
+                  value={p}
                   onChange={(e) => updatePriority(i, e.target.value)}
                 />
               </div>
@@ -416,11 +414,10 @@ export default function DailyPlan() {
       <div className="card">
         <h3 className="font-bold text-slate-800 mb-2">Self Feedback</h3>
         <textarea
-          key={`reflection-${selectedDate}`}
           className="textarea h-28"
           placeholder="How was today? What did I learn? What would I do differently?"
-          defaultValue={latestPlanRef.current.reflection}
-          onChange={(e) => { latestPlanRef.current = { ...latestPlanRef.current, reflection: e.target.value }; scheduleTextSave(); }}
+          value={plan.reflection}
+          onChange={(e) => save({ ...latestPlanRef.current, reflection: e.target.value })}
         />
       </div>
 
