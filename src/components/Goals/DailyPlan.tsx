@@ -49,6 +49,7 @@ export default function DailyPlan() {
     // Flush any pending debounced save for the previous date before switching
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
       upsertDailyPlan(latestPlanRef.current);
     }
     const found = dailyPlans.find((p) => p.date === selectedDate);
@@ -72,6 +73,7 @@ export default function DailyPlan() {
     setPlan(updated);
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
       upsertDailyPlan(latestPlanRef.current);
     }, 300);
   }
