@@ -34,7 +34,7 @@ const emptyPlan = (date: string): DailyPlanData => ({
 
 export default function DailyPlan() {
   const navigate = useNavigate();
-  const { dailyPlans, upsertDailyPlan, weeklyPlanItems } = useStore();
+  const { dailyPlans, upsertDailyPlan, weeklyPlanItems, weeklyTasks, updateWeeklyTask } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDomain, setNewTaskDomain] = useState<Domain>('output');
@@ -71,10 +71,18 @@ export default function DailyPlan() {
   }, [dailyPlans]); // selectedDate intentionally omitted: date-change is handled by the effect above
 
   // Get selected date's week plan items for reference
-  const selectedDateObj = new Date(selectedDate);
+  const selectedDateObj = new Date(selectedDate + 'T12:00:00');
   const year = selectedDateObj.getFullYear();
   const week = getWeekForDate(selectedDate);
   const thisWeekPlanItems = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
+
+  // Weekly tasks assigned to this specific day (0=Mon…6=Sun, matching WeeklyTask.dayOfWeek)
+  const dayOfWeek = (selectedDateObj.getDay() + 6) % 7;
+  const todaysWeeklyTasks = weeklyTasks.filter((t) => {
+    if (t.year !== year || t.week !== week) return false;
+    if (t.daysOfWeek && t.daysOfWeek.length > 0) return t.daysOfWeek.includes(dayOfWeek);
+    return t.dayOfWeek === dayOfWeek;
+  });
 
   const latestPlanRef = useRef<DailyPlanData>(plan);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,8 +209,11 @@ export default function DailyPlan() {
     saveImmediate({ ...latestPlanRef.current, topPriorities: priorities });
   }
 
-  const completedCount = plan.tasks.filter((t) => t.completed).length;
-  const achievementPct = plan.tasks.length > 0 ? Math.round((completedCount / plan.tasks.length) * 100) : 0;
+  const completedCount =
+    plan.tasks.filter((t) => t.completed).length +
+    todaysWeeklyTasks.filter((t) => t.completed).length;
+  const totalTaskCount = plan.tasks.length + todaysWeeklyTasks.length;
+  const achievementPct = totalTaskCount > 0 ? Math.round((completedCount / totalTaskCount) * 100) : 0;
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
   return (
@@ -227,7 +238,7 @@ export default function DailyPlan() {
       </div>
 
       {/* Achievement */}
-      {plan.tasks.length > 0 && (
+      {totalTaskCount > 0 && (
         <div className="card py-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-700">Achievement</span>
@@ -239,7 +250,7 @@ export default function DailyPlan() {
               style={{ width: `${achievementPct}%`, background: '#c45c8a' }}
             />
           </div>
-          <div className="text-xs text-slate-400 mt-1">{completedCount} of {plan.tasks.length} tasks completed</div>
+          <div className="text-xs text-slate-400 mt-1">{completedCount} of {totalTaskCount} tasks completed</div>
         </div>
       )}
 
@@ -356,9 +367,9 @@ export default function DailyPlan() {
       <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-slate-800">
-            Tasks ({completedCount}/{plan.tasks.length})
+            Tasks ({completedCount}/{totalTaskCount})
           </h3>
-          {plan.tasks.length > 0 && (
+          {totalTaskCount > 0 && (
             <div className="progress-bar w-24">
               <div
                 className="progress-fill"
@@ -370,6 +381,50 @@ export default function DailyPlan() {
             </div>
           )}
         </div>
+
+        {/* Weekly plan tasks for today — auto-reflected from Weekly Plan */}
+        {todaysWeeklyTasks.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {todaysWeeklyTasks.map((task) => {
+              const cfg = task.domain ? DOMAIN_CONFIG[task.domain] : null;
+              const isPinned = plan.topPriorities.includes(task.title);
+              return (
+                <div
+                  key={task.id}
+                  className={`p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-100' : 'bg-indigo-50/40 border-indigo-100'}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={() => updateWeeklyTask(task.id, { completed: !task.completed })}
+                      className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                      style={cfg ? { accentColor: cfg.color } : {}}
+                    />
+                    <span className={`flex-1 text-sm leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                      {task.title}
+                    </span>
+                    <button
+                      className={`p-1 rounded transition-colors flex-shrink-0 ${isPinned ? 'text-pink-500 hover:text-pink-600' : 'text-slate-300 hover:text-pink-400'}`}
+                      onClick={() => pinToTop3(task.title)}
+                      title={isPinned ? 'Remove from Top 3' : 'Add to Top 3'}
+                    >
+                      <Star size={13} fill={isPinned ? 'currentColor' : 'none'} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1.5 pl-6">
+                    {cfg && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${cfg.color}20`, color: cfg.color }}>
+                        {cfg.label}
+                      </span>
+                    )}
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-500">주간</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={plan.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
