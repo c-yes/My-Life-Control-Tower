@@ -57,7 +57,18 @@ export default function DailyPlan() {
     latestPlanRef.current = next;
     setPlan(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]); // dailyPlans intentionally omitted: including it re-renders mid-IME composition and clears Korean input
+  }, [selectedDate]);
+
+  // Sync plan when Firebase data arrives after initial mount (e.g. fresh device with no localStorage).
+  // Only update if there is no pending user edit (saveTimerRef is null = user is not mid-typing).
+  useEffect(() => {
+    if (saveTimerRef.current) return; // user is typing — don't overwrite
+    const found = dailyPlans.find((p) => p.date === selectedDate);
+    if (!found) return;
+    latestPlanRef.current = found;
+    setPlan(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyPlans]); // selectedDate intentionally omitted: date-change is handled by the effect above
 
   // Get selected date's week plan items for reference
   const selectedDateObj = new Date(selectedDate);
@@ -78,9 +89,11 @@ export default function DailyPlan() {
     }, 300);
   }
 
-  // Flush pending save on date change so previous date's data isn't lost
   function saveImmediate(updated: DailyPlanData) {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     latestPlanRef.current = updated;
     setPlan(updated);
     upsertDailyPlan(updated);
