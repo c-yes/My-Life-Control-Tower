@@ -116,7 +116,12 @@ export default function DailyPlan() {
   function togglePriorityDone(idx: number) {
     const done = [...(latestPlanRef.current.topPriorityDone ?? [false, false, false])];
     done[idx] = !done[idx];
-    saveImmediate({ ...latestPlanRef.current, topPriorityDone: done });
+    const priorityTitle = latestPlanRef.current.topPriorities[idx];
+    // Sync the matching daily task's completion state
+    const tasks = latestPlanRef.current.tasks.map((t) =>
+      t.title === priorityTitle ? { ...t, completed: done[idx] } : t
+    );
+    saveImmediate({ ...latestPlanRef.current, topPriorityDone: done, tasks });
   }
 
   function addTask() {
@@ -142,10 +147,27 @@ export default function DailyPlan() {
   }
 
   function toggleTask(id: string) {
-    saveImmediate({
-      ...latestPlanRef.current,
-      tasks: latestPlanRef.current.tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
-    });
+    const task = latestPlanRef.current.tasks.find((t) => t.id === id);
+    if (!task) return;
+    const newCompleted = !task.completed;
+    const updatedTasks = latestPlanRef.current.tasks.map((t) =>
+      t.id === id ? { ...t, completed: newCompleted } : t
+    );
+    const topPriorityDone = [...(latestPlanRef.current.topPriorityDone ?? [false, false, false])];
+    const priorityIdx = latestPlanRef.current.topPriorities.indexOf(task.title);
+    if (priorityIdx !== -1) topPriorityDone[priorityIdx] = newCompleted;
+    saveImmediate({ ...latestPlanRef.current, tasks: updatedTasks, topPriorityDone });
+  }
+
+  function toggleWeeklyTask(taskId: string, taskTitle: string, currentCompleted: boolean) {
+    const newCompleted = !currentCompleted;
+    updateWeeklyTask(taskId, { completed: newCompleted });
+    const priorityIdx = latestPlanRef.current.topPriorities.indexOf(taskTitle);
+    if (priorityIdx !== -1) {
+      const topPriorityDone = [...(latestPlanRef.current.topPriorityDone ?? [false, false, false])];
+      topPriorityDone[priorityIdx] = newCompleted;
+      saveImmediate({ ...latestPlanRef.current, topPriorityDone });
+    }
   }
 
   function deleteTask(id: string) {
@@ -397,7 +419,7 @@ export default function DailyPlan() {
                     <input
                       type="checkbox"
                       checked={task.completed}
-                      onChange={() => updateWeeklyTask(task.id, { completed: !task.completed })}
+                      onChange={() => toggleWeeklyTask(task.id, task.title, task.completed)}
                       className="mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
                       style={cfg ? { accentColor: cfg.color } : {}}
                     />
