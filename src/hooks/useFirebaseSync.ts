@@ -6,8 +6,6 @@ import { useStore } from '../store/useStore';
 
 // Unique identifier for this browser tab / session.
 // Used to distinguish echoes of our own writes from writes by other devices.
-// Other devices will never share this value, so we only skip snapshots that
-// (a) came from US and (b) are older than our most recent write intent.
 const SESSION_ID = Math.random().toString(36).slice(2);
 
 export function useFirebaseSync(user: User | null) {
@@ -15,19 +13,42 @@ export function useFirebaseSync(user: User | null) {
   const isRemoteUpdate = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const lastLocalWriteAt = useRef(0);
+  // Blocks writes until the first Firestore snapshot arrives.
+  // Prevents overwriting server data with stale local (localStorage) state on mount.
+  const initialSyncDone = useRef(false);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
 
     if (!user) return;
 
+    // Reset on every login so a fresh device waits for the server state.
+    initialSyncDone.current = false;
+
+    // Safety valve: allow writes after 5 s even if Firestore never responds
+    // (offline, rules issue, brand-new account with no document yet).
+    fallbackTimerRef.current = setTimeout(() => {
+      initialSyncDone.current = true;
+    }, 5000);
+
     const docRef = doc(db, 'users', user.uid);
 
-    // Listen for remote changes
     const unsubscribe = onSnapshot(docRef, (snap) => {
+      // First snapshot received — writes are now safe.
+      initialSyncDone.current = true;
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
+
       if (!snap.exists()) return;
       const data = snap.data();
       if (!data) return;
@@ -42,8 +63,8 @@ export function useFirebaseSync(user: User | null) {
       ) return;
 
       // Mark as remote so the write effect skips the Firestore re-write.
-      // Flag is reset inside the write effect (not here) so it stays true
-      // through the async React render + effect cycle.
+      // Flag is reset inside the write effect so it stays true through
+      // the async React render + effect cycle.
       isRemoteUpdate.current = true;
       const s = useStore.getState();
 
@@ -71,7 +92,13 @@ export function useFirebaseSync(user: User | null) {
     });
 
     unsubscribeRef.current = unsubscribe;
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
+    };
   }, [user]);
 
   // Push local changes to Firestore (debounced)
@@ -80,9 +107,12 @@ export function useFirebaseSync(user: User | null) {
   useEffect(() => {
     if (!user) return;
 
+    // Do not write until the first Firestore snapshot has been received.
+    // This prevents overwriting server data with stale/empty local state on mount.
+    if (!initialSyncDone.current) return;
+
     // Reset the remote flag HERE (not in onSnapshot) so it stays true through
-    // the React render cycle. This prevents stale snapshot data from being
-    // written back to Firestore by the debounce timer.
+    // the React render cycle.
     if (isRemoteUpdate.current) {
       isRemoteUpdate.current = false;
       return;
