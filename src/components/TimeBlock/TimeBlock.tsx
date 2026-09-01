@@ -50,6 +50,39 @@ const defaultForm: BlockForm = {
   color: '#6366f1',
 };
 
+function computeBlockLayout(blocks: TimeBlockData[]): Map<string, { col: number; numCols: number }> {
+  const sorted = [...blocks].sort(
+    (a, b) => (a.startHour * 60 + a.startMinute) - (b.startHour * 60 + b.startMinute)
+  );
+  const layout = new Map<string, { col: number; numCols: number }>();
+  const colEnds: number[] = [];
+
+  for (const block of sorted) {
+    const startMin = block.startHour * 60 + block.startMinute;
+    const endMin = block.endHour * 60 + block.endMinute;
+    let col = colEnds.findIndex((end) => end <= startMin);
+    if (col === -1) { col = colEnds.length; colEnds.push(endMin); }
+    else colEnds[col] = endMin;
+    layout.set(block.id, { col, numCols: 1 });
+  }
+
+  // Expand numCols to cover all overlapping columns
+  for (const a of sorted) {
+    const aStart = a.startHour * 60 + a.startMinute;
+    const aEnd = a.endHour * 60 + a.endMinute;
+    let maxCol = layout.get(a.id)!.col;
+    for (const b of sorted) {
+      if (a.id === b.id) continue;
+      const bStart = b.startHour * 60 + b.startMinute;
+      const bEnd = b.endHour * 60 + b.endMinute;
+      if (bStart < aEnd && bEnd > aStart) maxCol = Math.max(maxCol, layout.get(b.id)!.col);
+    }
+    layout.set(a.id, { ...layout.get(a.id)!, numCols: maxCol + 1 });
+  }
+
+  return layout;
+}
+
 export default function TimeBlock() {
   const { timeBlocks, addTimeBlock, updateTimeBlock, deleteTimeBlock, timeBlockMemos, setTimeBlockMemo, dailyPlans } = useStore();
   const [selectedDate, setSelectedDate] = useState(getTodayString());
@@ -226,18 +259,32 @@ export default function TimeBlock() {
             })}
 
             {/* Time blocks */}
-            {blocks.map((block) => {
+            {(() => {
+              const blockLayout = computeBlockLayout(blocks);
+              const rMargin = showMemos ? '192px' : '16px';
+              const blockArea = `calc(100% - 64px - ${rMargin})`;
+              return blocks.map((block) => {
               const cfg = block.domain ? DOMAIN_CONFIG[block.domain] : null;
               const top = blockTop(block);
               const height = blockHeight(block);
               const borderColor = cfg ? cfg.color : block.color;
+              const { col, numCols } = blockLayout.get(block.id) ?? { col: 0, numCols: 1 };
+              const colW = `(${blockArea} / ${numCols})`;
+              const leftStyle = col === 0
+                ? '64px'
+                : `calc(64px + ${col} * ${colW} + 3px)`;
+              const rightStyle = (numCols - col - 1) === 0
+                ? rMargin
+                : `calc(${rMargin} + ${numCols - col - 1} * ${colW} + 3px)`;
               return (
                 <div
                   key={block.id}
-                  className={`absolute left-16 rounded-lg px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity ${showMemos ? 'right-48' : 'right-4'}`}
+                  className="absolute rounded-lg px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity"
                   style={{
                     top,
                     height: Math.max(height, 28),
+                    left: leftStyle,
+                    right: rightStyle,
                     background: 'white',
                     border: `2px solid ${borderColor}`,
                   }}
@@ -268,7 +315,8 @@ export default function TimeBlock() {
                   </div>
                 </div>
               );
-            })}
+            });
+            })()}
           </div>
         </div>
 
