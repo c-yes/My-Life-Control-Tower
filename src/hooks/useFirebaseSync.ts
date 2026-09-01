@@ -4,12 +4,16 @@ import { User } from 'firebase/auth';
 import { db } from '../firebase';
 import { useStore } from '../store/useStore';
 
+// Unique identifier for this browser tab / session.
+// Used to distinguish echoes of our own writes from writes by other devices.
+// Other devices will never share this value, so we only skip snapshots that
+// (a) came from US and (b) are older than our most recent write intent.
+const SESSION_ID = Math.random().toString(36).slice(2);
+
 export function useFirebaseSync(user: User | null) {
   const store = useStore();
   const isRemoteUpdate = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  // Tracks the timestamp we stamped on our most recent local write intent.
-  // onSnapshot arrivals older than this are stale echoes and must be ignored.
   const lastLocalWriteAt = useRef(0);
 
   useEffect(() => {
@@ -28,10 +32,14 @@ export function useFirebaseSync(user: User | null) {
       const data = snap.data();
       if (!data) return;
 
-      // Skip snapshots that are older than our latest local write.
-      // This prevents Firestore echoes of previous writes from overwriting
-      // local state (e.g. a reorder) that was saved more recently.
-      if (data._lastWrite && data._lastWrite < lastLocalWriteAt.current) return;
+      // Skip only if this snapshot is an echo of OUR OWN write AND it is
+      // older than our most recent write intent. Writes from other devices
+      // always have a different _lastWriteBy and are never skipped.
+      if (
+        data._lastWriteBy === SESSION_ID &&
+        data._lastWrite &&
+        data._lastWrite < lastLocalWriteAt.current
+      ) return;
 
       // Mark as remote so the write effect skips the Firestore re-write.
       // Flag is reset inside the write effect (not here) so it stays true
@@ -93,6 +101,7 @@ export function useFirebaseSync(user: User | null) {
       lastLocalWriteAt.current = writeTime;
       setDoc(docRef, {
         _lastWrite: writeTime,
+        _lastWriteBy: SESSION_ID,
         lifeCompass: s.lifeCompass,
         annualGoals: s.annualGoals,
         monthlyGoals: s.monthlyGoals,
