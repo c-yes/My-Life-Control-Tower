@@ -8,6 +8,12 @@ import { useStore } from '../store/useStore';
 // Used to distinguish echoes of our own writes from writes by other devices.
 const SESSION_ID = Math.random().toString(36).slice(2);
 
+// Firestore rejects `undefined` field values. Strip them before every write
+// by round-tripping through JSON (JSON.stringify omits undefined object keys).
+function stripUndefined<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 export function useFirebaseSync(user: User | null) {
   const store = useStore();
   const isRemoteUpdate = useRef(false);
@@ -129,7 +135,7 @@ export function useFirebaseSync(user: User | null) {
       const docRef = doc(db, 'users', user.uid);
       const writeTime = Date.now();
       lastLocalWriteAt.current = writeTime;
-      setDoc(docRef, {
+      setDoc(docRef, stripUndefined({
         _lastWrite: writeTime,
         _lastWriteBy: SESSION_ID,
         lifeCompass: s.lifeCompass,
@@ -153,7 +159,7 @@ export function useFirebaseSync(user: User | null) {
         weeklyFeedbacks: s.weeklyFeedbacks,
         journalEntries: s.journalEntries,
         ddayItems: s.ddayItems,
-      }, { merge: true });
+      }), { merge: true });
     }, 1000);
 
     return () => {
