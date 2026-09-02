@@ -60,9 +60,10 @@ export function useFirebaseSync(user: User | null) {
       if (!data) return;
 
       // Skip any snapshot that is older than our most recent write intent.
-      // This prevents stale Firestore data (from any device, including our own
-      // echo) from overwriting local changes that haven't been confirmed yet.
-      if (data._lastWrite && data._lastWrite < lastLocalWriteAt.current) return;
+      // Treats missing _lastWrite (data written before timestamp tracking) as 0,
+      // so old Firestore data without a timestamp never overwrites newer local changes.
+      const serverWriteTime: number = data._lastWrite ?? 0;
+      if (serverWriteTime < lastLocalWriteAt.current) return;
 
       // Mark as remote so the write effect skips the Firestore re-write.
       // Flag is reset inside the write effect so it stays true through
