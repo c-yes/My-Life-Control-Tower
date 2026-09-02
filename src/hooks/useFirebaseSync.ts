@@ -81,6 +81,7 @@ export function useFirebaseSync(user: User | null) {
       if (data.timeBlocks) useStore.setState({ timeBlocks: data.timeBlocks });
       if (data.timeBlockMemos) useStore.setState({ timeBlockMemos: data.timeBlockMemos });
       if (data.miracle21Habits) useStore.setState({ miracle21Habits: data.miracle21Habits });
+      if (data.habits) useStore.setState({ habits: data.habits });
       if (data.mindMaps) useStore.setState({ mindMaps: data.mindMaps });
       if (data.mindMapDocs) useStore.setState({ mindMapDocs: data.mindMapDocs });
       if (data.domainEntries) useStore.setState({ domainEntries: data.domainEntries });
@@ -110,6 +111,13 @@ export function useFirebaseSync(user: User | null) {
   useEffect(() => {
     if (!user) return;
 
+    // Stamp intent time BEFORE the initialSyncDone guard so that any arriving
+    // snapshot sees our write intent and skips itself rather than clobbering
+    // local data typed before the first snapshot arrived.
+    if (!isRemoteUpdate.current) {
+      lastLocalWriteAt.current = Date.now();
+    }
+
     // Do not write until the first Firestore snapshot has been received.
     // This prevents overwriting server data with stale/empty local state on mount.
     if (!initialSyncDone.current) return;
@@ -120,10 +128,6 @@ export function useFirebaseSync(user: User | null) {
       isRemoteUpdate.current = false;
       return;
     }
-
-    // Record intent to write now so onSnapshot can compare immediately.
-    const writeIntent = Date.now();
-    lastLocalWriteAt.current = writeIntent;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -145,6 +149,7 @@ export function useFirebaseSync(user: User | null) {
         timeBlocks: s.timeBlocks,
         timeBlockMemos: s.timeBlockMemos,
         miracle21Habits: s.miracle21Habits,
+        habits: s.habits,
         mindMaps: s.mindMaps,
         mindMapDocs: s.mindMapDocs,
         domainEntries: s.domainEntries,
@@ -174,6 +179,7 @@ export function useFirebaseSync(user: User | null) {
     store.timeBlocks,
     store.timeBlockMemos,
     store.miracle21Habits,
+    store.habits,
     store.mindMaps,
     store.mindMapDocs,
     store.domainEntries,
