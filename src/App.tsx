@@ -19,6 +19,7 @@ import Journal from './components/Journal/Journal';
 import DDay from './components/DDay/DDay';
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
+import DataBackup from './components/Layout/DataBackup';
 
 function AppInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -93,6 +94,7 @@ function AppInner() {
             {user.photoURL && (
               <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" />
             )}
+            <DataBackup />
             <button
               onClick={logout}
               className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
@@ -109,6 +111,7 @@ function AppInner() {
             <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" />
           )}
           <span className="text-sm text-slate-600">{user.displayName}</span>
+          <DataBackup />
           <button
             onClick={logout}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
