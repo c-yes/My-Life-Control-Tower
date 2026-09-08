@@ -107,14 +107,23 @@ export function useFirebaseSync(user: User | null) {
 
   // Push local changes to Firestore (debounced)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the first write-effect run for this login session has fired.
+  // The first run is always mount-triggered (user dep change) — not a real user edit —
+  // so we must not stamp lastLocalWriteAt there (it would block the initial Firestore load).
+  const isFirstWriteRun = useRef(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      isFirstWriteRun.current = true;
+      return;
+    }
 
-    // Stamp intent time BEFORE the initialSyncDone guard so that any arriving
-    // snapshot sees our write intent and skips itself rather than clobbering
-    // local data typed before the first snapshot arrived.
-    if (!isRemoteUpdate.current) {
+    // After the first (mount) run, every subsequent run is a real user edit or a
+    // remote-update echo. Stamp intent time for user edits so that stale snapshots
+    // that arrive while initialSyncDone is still false cannot overwrite local changes.
+    if (isFirstWriteRun.current) {
+      isFirstWriteRun.current = false;
+    } else if (!isRemoteUpdate.current) {
       lastLocalWriteAt.current = Date.now();
     }
 
