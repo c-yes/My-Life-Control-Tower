@@ -52,6 +52,7 @@ export default function WeeklyPlan() {
   // Weekly plan items (goals) state
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [newGoalDomain, setNewGoalDomain] = useState<Domain | ''>('');
+  const [newGoalDays, setNewGoalDays] = useState<number[]>([]);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editGoalTitle, setEditGoalTitle] = useState('');
   const [editGoalDomain, setEditGoalDomain] = useState<Domain | ''>('');
@@ -113,6 +114,12 @@ export default function WeeklyPlan() {
     setEditingId(null);
   }
 
+  function toggleNewGoalDay(dayIdx: number) {
+    setNewGoalDays((prev) =>
+      prev.includes(dayIdx) ? prev.filter((d) => d !== dayIdx) : [...prev, dayIdx]
+    );
+  }
+
   function addWeekGoal() {
     if (!newGoalTitle.trim()) return;
     addWeeklyPlanItem({
@@ -123,8 +130,21 @@ export default function WeeklyPlan() {
       completed: false,
       domain: newGoalDomain || undefined,
     });
+    if (newGoalDays.length > 0) {
+      addWeeklyTask({
+        id: generateId(),
+        title: newGoalTitle.trim(),
+        domain: (newGoalDomain || 'output') as Domain,
+        dayOfWeek: newGoalDays[0],
+        daysOfWeek: newGoalDays,
+        completed: false,
+        year,
+        week,
+      });
+    }
     setNewGoalTitle('');
     setNewGoalDomain('');
+    setNewGoalDays([]);
   }
 
   function saveGoalEdit() {
@@ -404,27 +424,48 @@ export default function WeeklyPlan() {
             </div>
           </SortableContext>
         </DndContext>
-        <div className="flex gap-2 mt-3">
-          <input
-            className="input flex-1"
-            placeholder="이번 주 목표 추가..."
-            value={newGoalTitle}
-            onChange={(e) => setNewGoalTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addWeekGoal()}
-          />
-          <select
-            className="select"
-            value={newGoalDomain}
-            onChange={(e) => setNewGoalDomain(e.target.value as Domain | '')}
-          >
-            <option value="">도메인</option>
-            {domains.map((d) => (
-              <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+        <div className="space-y-2 mt-3">
+          <div className="flex gap-2">
+            <input
+              className="input flex-1"
+              placeholder="이번 주 목표 추가..."
+              value={newGoalTitle}
+              onChange={(e) => setNewGoalTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addWeekGoal()}
+            />
+            <select
+              className="select"
+              value={newGoalDomain}
+              onChange={(e) => setNewGoalDomain(e.target.value as Domain | '')}
+            >
+              <option value="">도메인</option>
+              {domains.map((d) => (
+                <option key={d} value={d}>{DOMAIN_CONFIG[d].label}</option>
+              ))}
+            </select>
+            <button className="btn-primary flex items-center gap-1" onClick={addWeekGoal}>
+              <Plus size={14} /> Add
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {DAYS_OF_WEEK.map((day, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                  newGoalDays.includes(i)
+                    ? 'bg-pink-500 text-white'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+                onClick={() => toggleNewGoalDay(i)}
+              >
+                {day.slice(0, 3)}
+              </button>
             ))}
-          </select>
-          <button className="btn-primary flex items-center gap-1" onClick={addWeekGoal}>
-            <Plus size={14} /> Add
-          </button>
+            <span className="text-xs text-slate-400 ml-1">
+              {newGoalDays.length > 0 ? '→ Plan에도 자동 추가' : '요일 선택 시 Plan에도 추가'}
+            </span>
+          </div>
         </div>
       </div>
 
