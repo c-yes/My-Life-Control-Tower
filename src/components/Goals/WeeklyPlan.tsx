@@ -52,7 +52,7 @@ export default function WeeklyPlan() {
   // Weekly plan items (goals) state
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [newGoalDomain, setNewGoalDomain] = useState<Domain | ''>('');
-  const [newGoalDays, setNewGoalDays] = useState<number[]>([]);
+  const [newGoalMonthlyGoalId, setNewGoalMonthlyGoalId] = useState('');
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editGoalTitle, setEditGoalTitle] = useState('');
   const [editGoalDomain, setEditGoalDomain] = useState<Domain | ''>('');
@@ -114,12 +114,6 @@ export default function WeeklyPlan() {
     setEditingId(null);
   }
 
-  function toggleNewGoalDay(dayIdx: number) {
-    setNewGoalDays((prev) =>
-      prev.includes(dayIdx) ? prev.filter((d) => d !== dayIdx) : [...prev, dayIdx]
-    );
-  }
-
   function addWeekGoal() {
     if (!newGoalTitle.trim()) return;
     addWeeklyPlanItem({
@@ -129,22 +123,11 @@ export default function WeeklyPlan() {
       title: newGoalTitle.trim(),
       completed: false,
       domain: newGoalDomain || undefined,
+      monthlyGoalId: newGoalMonthlyGoalId || undefined,
     });
-    if (newGoalDays.length > 0) {
-      addWeeklyTask({
-        id: generateId(),
-        title: newGoalTitle.trim(),
-        domain: (newGoalDomain || 'output') as Domain,
-        dayOfWeek: newGoalDays[0],
-        daysOfWeek: newGoalDays,
-        completed: false,
-        year,
-        week,
-      });
-    }
     setNewGoalTitle('');
     setNewGoalDomain('');
-    setNewGoalDays([]);
+    setNewGoalMonthlyGoalId('');
   }
 
   function saveGoalEdit() {
@@ -402,11 +385,15 @@ export default function WeeklyPlan() {
             <div className="space-y-2 mb-3">
               {thisWeekGoals.map((item) => {
                 const cfg = item.domain ? DOMAIN_CONFIG[item.domain] : null;
+                const linkedGoal = item.monthlyGoalId
+                  ? relevantMonthlyGoals.find((g) => g.id === item.monthlyGoalId)
+                  : null;
                 return (
                   <SortableWeeklyGoalItem
                     key={item.id}
                     item={item}
                     cfg={cfg}
+                    linkedGoalTitle={linkedGoal?.title}
                     isEditing={editingGoalId === item.id}
                     editTitle={editGoalTitle}
                     editDomain={editGoalDomain}
@@ -447,25 +434,21 @@ export default function WeeklyPlan() {
               <Plus size={14} /> Add
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {DAYS_OF_WEEK.map((day, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                  newGoalDays.includes(i)
-                    ? 'bg-pink-500 text-white'
-                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-                onClick={() => toggleNewGoalDay(i)}
-              >
-                {day.slice(0, 3)}
-              </button>
-            ))}
-            <span className="text-xs text-slate-400 ml-1">
-              {newGoalDays.length > 0 ? '→ Plan에도 자동 추가' : '요일 선택 시 Plan에도 추가'}
-            </span>
-          </div>
+          <select
+            className="select w-full text-xs"
+            value={newGoalMonthlyGoalId}
+            onChange={(e) => setNewGoalMonthlyGoalId(e.target.value)}
+          >
+            <option value="">월간 목표 연결 (선택)</option>
+            {relevantMonthlyGoals.map((mg) => {
+              const cfg = DOMAIN_CONFIG[mg.domain];
+              return (
+                <option key={mg.id} value={mg.id}>
+                  [{cfg.label}] {mg.title}
+                </option>
+              );
+            })}
+          </select>
         </div>
       </div>
 
@@ -628,12 +611,13 @@ export default function WeeklyPlan() {
 // ── Sortable weekly goal item ─────────────────────────────────────────────────
 
 function SortableWeeklyGoalItem({
-  item, cfg, isEditing, editTitle, editDomain, domains,
+  item, cfg, linkedGoalTitle, isEditing, editTitle, editDomain, domains,
   onToggle, onStartEdit, onSaveEdit, onCancelEdit, onDelete,
   onEditTitleChange, onEditDomainChange,
 }: {
   item: { id: string; title: string; completed: boolean; domain?: string };
   cfg: { color: string; label: string } | null;
+  linkedGoalTitle?: string;
   isEditing: boolean;
   editTitle: string;
   editDomain: string;
@@ -696,9 +680,14 @@ function SortableWeeklyGoalItem({
         </div>
       ) : (
         <>
-          <span className={`flex-1 text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-            {item.title}
-          </span>
+          <div className="flex-1 min-w-0">
+            <span className={`text-sm ${item.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+              {item.title}
+            </span>
+            {linkedGoalTitle && (
+              <div className="text-xs text-slate-400 mt-0.5 truncate">↳ {linkedGoalTitle}</div>
+            )}
+          </div>
           {cfg && (
             <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
               style={{ background: `${cfg.color}20`, color: cfg.color }}>

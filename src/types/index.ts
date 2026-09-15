@@ -185,6 +185,7 @@ export interface WeeklyPlanItem {
   title: string;
   completed: boolean;
   domain?: Domain;
+  monthlyGoalId?: string;
 }
 
 // Wannabe List items
