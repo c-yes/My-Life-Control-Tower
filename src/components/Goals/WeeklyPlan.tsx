@@ -61,10 +61,13 @@ export default function WeeklyPlan() {
   const weekDays = getWeekDays(year, week);
   const domains = Object.keys(DOMAIN_CONFIG) as Domain[];
 
-  const relevantMonthlyGoals = monthlyGoals.filter((g) => g.year === year);
-  const currentMonth = getCurrentMonth();
+  // Derive the month from the selected week's first day so navigation to past/future weeks works correctly
+  const weekMonth = weekDays.length > 0 ? weekDays[0].getMonth() + 1 : getCurrentMonth();
+
+  const relevantMonthlyGoals = monthlyGoals.filter((g) => g.year === year && g.month === weekMonth);
+  const currentMonth = weekMonth;
   const relevantMonthlyPlanItems = monthlyPlanItems.filter(
-    (i) => i.year === year && i.month === currentMonth
+    (i) => i.year === year && i.month === weekMonth
   );
 
   const thisWeekGoals = weeklyPlanItems.filter((i) => i.year === year && i.week === week);
